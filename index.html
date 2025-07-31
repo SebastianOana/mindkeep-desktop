@@ -456,12 +456,23 @@
             }
         }
         
-        function checkForUpdates() {
-            // Simulate checking for updates
-            setTimeout(() => {
-                // Simulate no updates found
-                showAlert('✅ Up to Date', 'You have the latest version!');
-            }, 1000);
+        async function checkForUpdates() {
+            try {
+                const response = await fetch('https://api.github.com/repos/SebastianOana/mindkeep-desktop/releases/latest');
+                const release = await response.json();
+                const latestVersion = release.tag_name;
+                const currentVersion = '1.0.0'; // Update this when you release new versions
+                
+                if (latestVersion !== currentVersion) {
+                    if (confirm(`New version ${latestVersion} available!\n\nCurrent: ${currentVersion}\nLatest: ${latestVersion}\n\nDownload now?`)) {
+                        window.open(release.html_url, '_blank');
+                    }
+                } else {
+                    showAlert('✅ Up to Date', 'You have the latest version!');
+                }
+            } catch (error) {
+                showAlert('❌ Error', 'Could not check for updates. Please check your internet connection.');
+            }
         }
         
         // Initialize when page loads
