@@ -12,7 +12,7 @@
             <div class="search-bar">
                 <input type="text" id="searchInput" placeholder="Search notes..." class="search-input">
             </div>
-            <button id="updateBtn" class="update-btn" onclick="alert('Update button works!')">Check Updates</button>
+            <button id="updateBtn" class="update-btn" onclick="window.mindKeep && window.mindKeep.checkForUpdates()">Check Updates</button>
         </div>
         
         <div class="app-body">
@@ -22,10 +22,10 @@
                         <option value="all">All Notes</option>
                     </select>
                     <div class="category-actions">
-                        <button id="newCategoryBtn" class="category-btn" onclick="alert('Category button works!')">+ Category</button>
-                        <button id="manageCategoriesBtn" class="category-btn" onclick="alert('Manage button works!')">Manage</button>
+                        <button id="newCategoryBtn" class="category-btn" onclick="window.mindKeep && window.mindKeep.createNewCategory()">+ Category</button>
+                        <button id="manageCategoriesBtn" class="category-btn" onclick="window.mindKeep && window.mindKeep.manageCategories()">Manage</button>
                     </div>
-                    <button id="newNoteBtn" class="new-note-btn" onclick="alert('New note works!')">+ New Note</button>
+                    <button id="newNoteBtn" class="new-note-btn" onclick="window.mindKeep && window.mindKeep.createNewNote()">+ New Note</button>
                 </div>
                 <div id="notesList" class="notes-list"></div>
             </div>
@@ -34,7 +34,7 @@
                 <div id="welcomeScreen" class="welcome">
                     <h2>Welcome to MindKeep</h2>
                     <p>Your offline knowledge vault</p>
-                    <button id="createFirstNote">Create Your First Note</button>
+                    <button id="createFirstNote" onclick="window.mindKeep && window.mindKeep.createNewNote()">Create Your First Note</button>
                 </div>
                 
                 <div id="editor" class="editor" style="display: none;">
