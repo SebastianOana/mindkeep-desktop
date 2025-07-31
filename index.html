@@ -151,6 +151,167 @@
     </div>
     
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-    <script src="app.js"></script>
+    <script>
+        // Embed the entire app logic here to ensure it works in built versions
+        const fs = require('fs');
+        const path = require('path');
+
+        class MindKeep {
+            constructor() {
+                this.notes = [];
+                this.categories = [{ name: 'General', color: '#4a9eff' }];
+                this.currentNote = null;
+                this.currentCategory = 'all';
+                this.notesDir = path.join(__dirname, 'notes');
+                this.imagesDir = path.join(__dirname, 'images');
+                this.categoriesFile = path.join(__dirname, 'categories.json');
+                this.init();
+            }
+
+            init() {
+                this.ensureNotesDir();
+                this.loadCategories();
+                this.loadNotes();
+                this.renderCategories();
+                this.renderNotesList();
+            }
+
+            ensureNotesDir() {
+                if (!fs.existsSync(this.notesDir)) {
+                    fs.mkdirSync(this.notesDir, { recursive: true });
+                }
+                if (!fs.existsSync(this.imagesDir)) {
+                    fs.mkdirSync(this.imagesDir, { recursive: true });
+                }
+            }
+
+            loadCategories() {
+                try {
+                    if (fs.existsSync(this.categoriesFile)) {
+                        const data = fs.readFileSync(this.categoriesFile, 'utf8');
+                        this.categories = JSON.parse(data);
+                    }
+                } catch (error) {
+                    console.error('Error loading categories:', error);
+                }
+            }
+
+            saveCategories() {
+                try {
+                    fs.writeFileSync(this.categoriesFile, JSON.stringify(this.categories, null, 2));
+                } catch (error) {
+                    console.error('Error saving categories:', error);
+                }
+            }
+
+            createNewCategory() {
+                document.getElementById('categoryModal').style.display = 'flex';
+                document.getElementById('categoryNameInput').focus();
+            }
+
+            closeCategoryModal() {
+                document.getElementById('categoryModal').style.display = 'none';
+                document.getElementById('categoryNameInput').value = '';
+                document.getElementById('categoryColorInput').value = '#4a9eff';
+            }
+
+            saveCategoryModal() {
+                const categoryName = document.getElementById('categoryNameInput').value.trim();
+                const color = document.getElementById('categoryColorInput').value;
+                
+                if (categoryName) {
+                    const exists = this.categories.some(cat => cat.name === categoryName);
+                    if (!exists) {
+                        this.categories.push({ name: categoryName, color: color });
+                        this.saveCategories();
+                        this.renderCategories();
+                        this.closeCategoryModal();
+                    } else {
+                        alert('Category already exists!');
+                    }
+                }
+            }
+
+            manageCategories() {
+                document.getElementById('manageCategoriesModal').style.display = 'flex';
+                this.renderCategoriesList();
+            }
+
+            closeManageCategoriesModal() {
+                document.getElementById('manageCategoriesModal').style.display = 'none';
+            }
+
+            renderCategoriesList() {
+                const categoriesList = document.getElementById('categoriesList');
+                
+                categoriesList.innerHTML = this.categories.map(cat => {
+                    const noteCount = this.notes.filter(note => note.category === cat.name).length;
+                    return `
+                        <div class="category-item" style="border-left-color: ${cat.color};">
+                            <div class="category-info">
+                                <span>${cat.name}</span>
+                                <span style="color: #888;">(${cat.color}) - ${noteCount} notes</span>
+                            </div>
+                            <div class="category-actions">
+                                ${noteCount > 0 ? `<button class="category-move" onclick="window.mindKeep.moveNotesFromCategory('${cat.name}')">Move Notes</button>` : ''}
+                                ${cat.name !== 'General' ? 
+                                    `<button class="category-delete" onclick="window.mindKeep.deleteCategoryFromModal('${cat.name}')">Delete</button>` : 
+                                    '<span style="color: #888;">Default</span>'
+                                }
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+            }
+
+            createNewNote() {
+                alert('Create new note clicked!');
+            }
+
+            checkForUpdates() {
+                alert('Check for updates clicked!');
+            }
+
+            renderCategories() {
+                const categorySelector = document.getElementById('categorySelector');
+                const noteCategory = document.getElementById('noteCategory');
+                
+                if (categorySelector) {
+                    categorySelector.innerHTML = '<option value="all">All Notes</option>' + 
+                        this.categories.map(cat => `<option value="${cat.name}">${cat.name}</option>`).join('');
+                }
+                
+                if (noteCategory) {
+                    noteCategory.innerHTML = '<option value="">Select Category</option>' + 
+                        this.categories.map(cat => `<option value="${cat.name}">${cat.name}</option>`).join('');
+                }
+            }
+
+            loadNotes() {
+                this.notes = [];
+            }
+
+            renderNotesList() {
+                const notesList = document.getElementById('notesList');
+                if (notesList) {
+                    notesList.innerHTML = '<div style="padding: 1rem; text-align: center; color: #888;">No notes found</div>';
+                }
+            }
+        }
+
+        // Initialize when DOM is ready
+        window.mindKeep = null;
+        
+        function initApp() {
+            window.mindKeep = new MindKeep();
+            console.log('MindKeep initialized');
+        }
+        
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initApp);
+        } else {
+            initApp();
+        }
+    </script>
 </body>
 </html>
