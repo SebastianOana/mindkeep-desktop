@@ -591,10 +591,38 @@ class MindKeep {
             }
         }
     }
+
+    async checkForUpdates() {
+        try {
+            const response = await fetch('https://api.github.com/repos/SebastianOana/mindkeep-desktop/releases/latest');
+            const release = await response.json();
+            const latestVersion = release.tag_name;
+            const currentVersion = '1.0.0'; // Update this when you release new versions
+            
+            if (latestVersion !== currentVersion) {
+                const download = confirm(`New version ${latestVersion} available!\n\nCurrent: ${currentVersion}\nLatest: ${latestVersion}\n\nDownload now?`);
+                if (download) {
+                    window.open(release.html_url, '_blank');
+                }
+            } else {
+                alert('You have the latest version!');
+            }
+        } catch (error) {
+            alert('Could not check for updates. Please check your internet connection.');
+        }
+    }
 }
 
 // Initialize the app when DOM is loaded
 window.mindKeep = null;
-document.addEventListener('DOMContentLoaded', () => {
+
+function initializeApp() {
     window.mindKeep = new MindKeep();
-});
+    console.log('MindKeep initialized');
+}
+
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initializeApp);
+} else {
+    initializeApp();
+}

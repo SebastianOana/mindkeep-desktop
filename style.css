@@ -53,6 +53,20 @@ body {
   border-color: #4a9eff;
 }
 
+.update-btn {
+  padding: 0.5rem 1rem;
+  background: #28a745;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.9rem;
+}
+
+.update-btn:hover {
+  background: #218838;
+}
+
 .app-body {
   display: flex;
   flex: 1;

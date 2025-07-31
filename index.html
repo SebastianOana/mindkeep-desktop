@@ -12,6 +12,7 @@
             <div class="search-bar">
                 <input type="text" id="searchInput" placeholder="Search notes..." class="search-input">
             </div>
+            <button id="updateBtn" class="update-btn" onclick="window.mindKeep && window.mindKeep.checkForUpdates()">Check Updates</button>
         </div>
         
         <div class="app-body">
@@ -21,8 +22,8 @@
                         <option value="all">All Notes</option>
                     </select>
                     <div class="category-actions">
-                        <button id="newCategoryBtn" class="category-btn" onclick="window.mindKeep.createNewCategory()">+ Category</button>
-                        <button id="manageCategoriesBtn" class="category-btn" onclick="window.mindKeep.manageCategories()">Manage</button>
+                        <button id="newCategoryBtn" class="category-btn" onclick="window.mindKeep && window.mindKeep.createNewCategory()">+ Category</button>
+                        <button id="manageCategoriesBtn" class="category-btn" onclick="window.mindKeep && window.mindKeep.manageCategories()">Manage</button>
                     </div>
                     <button id="newNoteBtn" class="new-note-btn">+ New Note</button>
                 </div>
