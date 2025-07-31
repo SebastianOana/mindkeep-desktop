@@ -28,6 +28,7 @@
   "build": {
     "appId": "com.mindkeep.app",
     "productName": "MindKeep",
+    "artifactName": "${productName}.${ext}",
     "directories": {
       "output": "dist"
     },
@@ -40,14 +41,17 @@
     ],
     "win": {
       "target": "nsis",
+      "artifactName": "${productName}-Setup.${ext}",
       "icon": "icon.ico"
     },
     "mac": {
       "target": "dmg",
+      "artifactName": "${productName}.${ext}",
       "icon": "icon.icns"
     },
     "linux": {
       "target": "AppImage",
+      "artifactName": "${productName}.${ext}",
       "icon": "icon.png"
     }
   }
