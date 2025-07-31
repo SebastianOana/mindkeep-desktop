@@ -135,21 +135,13 @@ class MindKeep {
         document.getElementById('editBtn').addEventListener('click', () => this.editCurrentNote());
         document.getElementById('searchInput').addEventListener('input', (e) => this.handleSearch(e.target.value));
         
-        // Category events using event delegation
-        document.addEventListener('click', (e) => {
-            if (e.target.id === 'newCategoryBtn') {
-                this.createNewCategory();
-            }
-            if (e.target.id === 'manageCategoriesBtn') {
-                this.manageCategories();
-            }
-        });
+        // Category buttons
+        document.getElementById('newCategoryBtn').addEventListener('click', () => this.createNewCategory());
+        document.getElementById('manageCategoriesBtn').addEventListener('click', () => this.manageCategories());
+        document.getElementById('updateBtn').addEventListener('click', () => this.checkForUpdates());
         
-        document.addEventListener('change', (e) => {
-            if (e.target.id === 'categorySelector') {
-                this.filterByCategory(e.target.value);
-            }
-        });
+        // Category selector
+        document.getElementById('categorySelector').addEventListener('change', (e) => this.filterByCategory(e.target.value));
         
         // Ctrl+S shortcut
         document.addEventListener('keydown', (e) => {
@@ -160,6 +152,22 @@ class MindKeep {
         });
         
         this.setupImageDragDrop();
+        this.bindModalEvents();
+    }
+
+    bindModalEvents() {
+        // Category modal events
+        document.getElementById('saveCategoryBtn').addEventListener('click', () => this.saveCategoryModal());
+        document.getElementById('closeCategoryBtn').addEventListener('click', () => this.closeCategoryModal());
+        
+        // Manage categories modal events
+        document.getElementById('closeManageCategoriesBtn').addEventListener('click', () => this.closeManageCategoriesModal());
+        
+        // Update modal events
+        document.getElementById('downloadUpdateBtn').addEventListener('click', () => this.downloadUpdate());
+        document.getElementById('closeUpdateBtn').addEventListener('click', () => this.closeUpdateModal());
+        document.getElementById('closeNoUpdateBtn').addEventListener('click', () => this.closeNoUpdateModal());
+        document.getElementById('closeUpdateErrorBtn').addEventListener('click', () => this.closeUpdateErrorModal());
     }
 
     createNewCategory() {

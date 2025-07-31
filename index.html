@@ -12,7 +12,7 @@
             <div class="search-bar">
                 <input type="text" id="searchInput" placeholder="Search notes..." class="search-input">
             </div>
-            <button id="updateBtn" class="update-btn" onclick="window.mindKeep && window.mindKeep.checkForUpdates()">Check Updates</button>
+            <button id="updateBtn" class="update-btn">Check Updates</button>
         </div>
         
         <div class="app-body">
@@ -22,8 +22,8 @@
                         <option value="all">All Notes</option>
                     </select>
                     <div class="category-actions">
-                        <button id="newCategoryBtn" class="category-btn" onclick="window.mindKeep && window.mindKeep.createNewCategory()">+ Category</button>
-                        <button id="manageCategoriesBtn" class="category-btn" onclick="window.mindKeep && window.mindKeep.manageCategories()">Manage</button>
+                        <button id="newCategoryBtn" class="category-btn">+ Category</button>
+                        <button id="manageCategoriesBtn" class="category-btn">Manage</button>
                     </div>
                     <button id="newNoteBtn" class="new-note-btn">+ New Note</button>
                 </div>
@@ -99,8 +99,8 @@
             <input type="text" id="categoryNameInput" placeholder="Category name" class="modal-input">
             <input type="color" id="categoryColorInput" value="#4a9eff" class="modal-input">
             <div class="modal-buttons">
-                <button onclick="window.mindKeep.saveCategoryModal()" class="modal-btn save">Create</button>
-                <button onclick="window.mindKeep.closeCategoryModal()" class="modal-btn cancel">Cancel</button>
+                <button id="saveCategoryBtn" class="modal-btn save">Create</button>
+                <button id="closeCategoryBtn" class="modal-btn cancel">Cancel</button>
             </div>
         </div>
     </div>
@@ -111,7 +111,7 @@
             <h3>Manage Categories</h3>
             <div id="categoriesList" class="categories-list"></div>
             <div class="modal-buttons">
-                <button onclick="window.mindKeep.closeManageCategoriesModal()" class="modal-btn cancel">Close</button>
+                <button id="closeManageCategoriesBtn" class="modal-btn cancel">Close</button>
             </div>
         </div>
     </div>
@@ -122,8 +122,8 @@
             <h3>🎉 Update Available!</h3>
             <p id="updateMessage"></p>
             <div class="modal-buttons">
-                <button onclick="window.mindKeep.downloadUpdate()" class="modal-btn save">Download</button>
-                <button onclick="window.mindKeep.closeUpdateModal()" class="modal-btn cancel">Later</button>
+                <button id="downloadUpdateBtn" class="modal-btn save">Download</button>
+                <button id="closeUpdateBtn" class="modal-btn cancel">Later</button>
             </div>
         </div>
     </div>
@@ -134,7 +134,7 @@
             <h3>✅ You're Up to Date!</h3>
             <p>You have the latest version of MindKeep.</p>
             <div class="modal-buttons">
-                <button onclick="window.mindKeep.closeNoUpdateModal()" class="modal-btn save">OK</button>
+                <button id="closeNoUpdateBtn" class="modal-btn save">OK</button>
             </div>
         </div>
     </div>
@@ -145,7 +145,7 @@
             <h3>❌ Update Check Failed</h3>
             <p>Could not check for updates. Please check your internet connection and try again.</p>
             <div class="modal-buttons">
-                <button onclick="window.mindKeep.closeUpdateErrorModal()" class="modal-btn cancel">OK</button>
+                <button id="closeUpdateErrorBtn" class="modal-btn cancel">OK</button>
             </div>
         </div>
     </div>
