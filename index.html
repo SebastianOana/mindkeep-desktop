@@ -150,22 +150,6 @@
         </div>
     </div>
     
-    <script>
-        console.log('Inline script running');
-        document.addEventListener('DOMContentLoaded', function() {
-            console.log('DOM loaded');
-            // Test button click
-            const testBtn = document.getElementById('updateBtn');
-            if (testBtn) {
-                testBtn.addEventListener('click', function() {
-                    alert('Button clicked!');
-                });
-                console.log('Test button listener added');
-            } else {
-                console.log('Update button not found');
-            }
-        });
-    </script>
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <script src="app.js"></script>
 </body>

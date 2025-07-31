@@ -11,8 +11,7 @@ function createWindow() {
             nodeIntegration: true,
             contextIsolation: false,
             webSecurity: false,
-            allowRunningInsecureContent: true,
-            experimentalFeatures: true
+            allowRunningInsecureContent: true
         },
         show: false
     });
@@ -21,7 +20,11 @@ function createWindow() {
     
     mainWindow.once('ready-to-show', () => {
         mainWindow.show();
-        mainWindow.webContents.openDevTools(); // Always open DevTools to see errors
+        
+        // Only open DevTools in development
+        if (process.env.NODE_ENV === 'development') {
+            mainWindow.webContents.openDevTools();
+        }
     });
 
     mainWindow.on('closed', () => {
@@ -29,7 +32,7 @@ function createWindow() {
     });
 }
 
-app.on('ready', () => {
+app.whenReady().then(() => {
     createWindow();
 });
 

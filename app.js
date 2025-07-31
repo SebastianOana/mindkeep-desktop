@@ -733,18 +733,39 @@ class MindKeep {
 // Initialize the app when DOM is loaded
 window.mindKeep = null;
 
+// Ensure MindKeep is available globally
+window.mindKeep = null;
+
 function initializeApp() {
     console.log('Starting MindKeep initialization...');
     try {
         window.mindKeep = new MindKeep();
-        console.log('MindKeep initialized successfully:', window.mindKeep);
+        console.log('MindKeep initialized successfully');
+        
+        // Make sure it's globally accessible
+        if (typeof global !== 'undefined') {
+            global.mindKeep = window.mindKeep;
+        }
+        
     } catch (error) {
         console.error('Error initializing MindKeep:', error);
     }
 }
 
+// Multiple initialization methods to ensure it works in all contexts
 if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', initializeApp);
 } else {
     initializeApp();
+}
+
+// Backup initialization for built apps
+setTimeout(initializeApp, 100);
+
+// Electron-specific initialization
+if (typeof require !== 'undefined') {
+    const { ipcRenderer } = require('electron');
+    if (ipcRenderer) {
+        setTimeout(initializeApp, 200);
+    }
 }
