@@ -127,21 +127,69 @@ class MindKeep {
     }
 
     bindEvents() {
+        console.log('Binding events...');
+        
         // Basic events
-        document.getElementById('newNoteBtn').addEventListener('click', () => this.createNewNote());
-        document.getElementById('createFirstNote').addEventListener('click', () => this.createNewNote());
-        document.getElementById('saveBtn').addEventListener('click', () => this.saveCurrentNote());
-        document.getElementById('cancelBtn').addEventListener('click', () => this.cancelEdit());
-        document.getElementById('editBtn').addEventListener('click', () => this.editCurrentNote());
-        document.getElementById('searchInput').addEventListener('input', (e) => this.handleSearch(e.target.value));
+        const newNoteBtn = document.getElementById('newNoteBtn');
+        if (newNoteBtn) {
+            newNoteBtn.addEventListener('click', () => {
+                console.log('New note button clicked');
+                this.createNewNote();
+            });
+        }
+        
+        const createFirstNote = document.getElementById('createFirstNote');
+        if (createFirstNote) {
+            createFirstNote.addEventListener('click', () => this.createNewNote());
+        }
+        
+        const saveBtn = document.getElementById('saveBtn');
+        if (saveBtn) {
+            saveBtn.addEventListener('click', () => this.saveCurrentNote());
+        }
+        
+        const cancelBtn = document.getElementById('cancelBtn');
+        if (cancelBtn) {
+            cancelBtn.addEventListener('click', () => this.cancelEdit());
+        }
+        
+        const editBtn = document.getElementById('editBtn');
+        if (editBtn) {
+            editBtn.addEventListener('click', () => this.editCurrentNote());
+        }
+        
+        const searchInput = document.getElementById('searchInput');
+        if (searchInput) {
+            searchInput.addEventListener('input', (e) => this.handleSearch(e.target.value));
+        }
         
         // Category buttons
-        document.getElementById('newCategoryBtn').addEventListener('click', () => this.createNewCategory());
-        document.getElementById('manageCategoriesBtn').addEventListener('click', () => this.manageCategories());
-        document.getElementById('updateBtn').addEventListener('click', () => this.checkForUpdates());
+        const newCategoryBtn = document.getElementById('newCategoryBtn');
+        if (newCategoryBtn) {
+            newCategoryBtn.addEventListener('click', () => {
+                console.log('New category button clicked');
+                this.createNewCategory();
+            });
+        }
+        
+        const manageCategoriesBtn = document.getElementById('manageCategoriesBtn');
+        if (manageCategoriesBtn) {
+            manageCategoriesBtn.addEventListener('click', () => {
+                console.log('Manage categories button clicked');
+                this.manageCategories();
+            });
+        }
+        
+        const updateBtn = document.getElementById('updateBtn');
+        if (updateBtn) {
+            updateBtn.addEventListener('click', () => this.checkForUpdates());
+        }
         
         // Category selector
-        document.getElementById('categorySelector').addEventListener('change', (e) => this.filterByCategory(e.target.value));
+        const categorySelector = document.getElementById('categorySelector');
+        if (categorySelector) {
+            categorySelector.addEventListener('change', (e) => this.filterByCategory(e.target.value));
+        }
         
         // Ctrl+S shortcut
         document.addEventListener('keydown', (e) => {
@@ -153,21 +201,52 @@ class MindKeep {
         
         this.setupImageDragDrop();
         this.bindModalEvents();
+        
+        console.log('Events bound successfully');
     }
 
     bindModalEvents() {
+        console.log('Binding modal events...');
+        
         // Category modal events
-        document.getElementById('saveCategoryBtn').addEventListener('click', () => this.saveCategoryModal());
-        document.getElementById('closeCategoryBtn').addEventListener('click', () => this.closeCategoryModal());
+        const saveCategoryBtn = document.getElementById('saveCategoryBtn');
+        if (saveCategoryBtn) {
+            saveCategoryBtn.addEventListener('click', () => this.saveCategoryModal());
+        }
+        
+        const closeCategoryBtn = document.getElementById('closeCategoryBtn');
+        if (closeCategoryBtn) {
+            closeCategoryBtn.addEventListener('click', () => this.closeCategoryModal());
+        }
         
         // Manage categories modal events
-        document.getElementById('closeManageCategoriesBtn').addEventListener('click', () => this.closeManageCategoriesModal());
+        const closeManageCategoriesBtn = document.getElementById('closeManageCategoriesBtn');
+        if (closeManageCategoriesBtn) {
+            closeManageCategoriesBtn.addEventListener('click', () => this.closeManageCategoriesModal());
+        }
         
         // Update modal events
-        document.getElementById('downloadUpdateBtn').addEventListener('click', () => this.downloadUpdate());
-        document.getElementById('closeUpdateBtn').addEventListener('click', () => this.closeUpdateModal());
-        document.getElementById('closeNoUpdateBtn').addEventListener('click', () => this.closeNoUpdateModal());
-        document.getElementById('closeUpdateErrorBtn').addEventListener('click', () => this.closeUpdateErrorModal());
+        const downloadUpdateBtn = document.getElementById('downloadUpdateBtn');
+        if (downloadUpdateBtn) {
+            downloadUpdateBtn.addEventListener('click', () => this.downloadUpdate());
+        }
+        
+        const closeUpdateBtn = document.getElementById('closeUpdateBtn');
+        if (closeUpdateBtn) {
+            closeUpdateBtn.addEventListener('click', () => this.closeUpdateModal());
+        }
+        
+        const closeNoUpdateBtn = document.getElementById('closeNoUpdateBtn');
+        if (closeNoUpdateBtn) {
+            closeNoUpdateBtn.addEventListener('click', () => this.closeNoUpdateModal());
+        }
+        
+        const closeUpdateErrorBtn = document.getElementById('closeUpdateErrorBtn');
+        if (closeUpdateErrorBtn) {
+            closeUpdateErrorBtn.addEventListener('click', () => this.closeUpdateErrorModal());
+        }
+        
+        console.log('Modal events bound successfully');
     }
 
     createNewCategory() {
@@ -655,8 +734,13 @@ class MindKeep {
 window.mindKeep = null;
 
 function initializeApp() {
-    window.mindKeep = new MindKeep();
-    console.log('MindKeep initialized');
+    console.log('Starting MindKeep initialization...');
+    try {
+        window.mindKeep = new MindKeep();
+        console.log('MindKeep initialized successfully:', window.mindKeep);
+    } catch (error) {
+        console.error('Error initializing MindKeep:', error);
+    }
 }
 
 if (document.readyState === 'loading') {
