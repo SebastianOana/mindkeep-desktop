@@ -116,6 +116,40 @@
         </div>
     </div>
     
+    <!-- Update Available Modal -->
+    <div id="updateAvailableModal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <h3>🎉 Update Available!</h3>
+            <p id="updateMessage"></p>
+            <div class="modal-buttons">
+                <button onclick="window.mindKeep.downloadUpdate()" class="modal-btn save">Download</button>
+                <button onclick="window.mindKeep.closeUpdateModal()" class="modal-btn cancel">Later</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- No Update Modal -->
+    <div id="noUpdateModal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <h3>✅ You're Up to Date!</h3>
+            <p>You have the latest version of MindKeep.</p>
+            <div class="modal-buttons">
+                <button onclick="window.mindKeep.closeNoUpdateModal()" class="modal-btn save">OK</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Update Error Modal -->
+    <div id="updateErrorModal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <h3>❌ Update Check Failed</h3>
+            <p>Could not check for updates. Please check your internet connection and try again.</p>
+            <div class="modal-buttons">
+                <button onclick="window.mindKeep.closeUpdateErrorModal()" class="modal-btn cancel">OK</button>
+            </div>
+        </div>
+    </div>
+    
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <script src="app.js"></script>
 </body>

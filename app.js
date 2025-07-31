@@ -600,16 +600,46 @@ class MindKeep {
             const currentVersion = '1.0.0'; // Update this when you release new versions
             
             if (latestVersion !== currentVersion) {
-                const download = confirm(`New version ${latestVersion} available!\n\nCurrent: ${currentVersion}\nLatest: ${latestVersion}\n\nDownload now?`);
-                if (download) {
-                    window.open(release.html_url, '_blank');
-                }
+                this.showUpdateAvailable(currentVersion, latestVersion, release.html_url);
             } else {
-                alert('You have the latest version!');
+                this.showNoUpdate();
             }
         } catch (error) {
-            alert('Could not check for updates. Please check your internet connection.');
+            this.showUpdateError();
         }
+    }
+
+    showUpdateAvailable(current, latest, downloadUrl) {
+        this.updateDownloadUrl = downloadUrl;
+        document.getElementById('updateMessage').textContent = `Current version: ${current}\nNew version: ${latest}`;
+        document.getElementById('updateAvailableModal').style.display = 'flex';
+    }
+
+    showNoUpdate() {
+        document.getElementById('noUpdateModal').style.display = 'flex';
+    }
+
+    showUpdateError() {
+        document.getElementById('updateErrorModal').style.display = 'flex';
+    }
+
+    downloadUpdate() {
+        if (this.updateDownloadUrl) {
+            window.open(this.updateDownloadUrl, '_blank');
+        }
+        this.closeUpdateModal();
+    }
+
+    closeUpdateModal() {
+        document.getElementById('updateAvailableModal').style.display = 'none';
+    }
+
+    closeNoUpdateModal() {
+        document.getElementById('noUpdateModal').style.display = 'none';
+    }
+
+    closeUpdateErrorModal() {
+        document.getElementById('updateErrorModal').style.display = 'none';
     }
 }
 
