@@ -21,6 +21,9 @@
   ],
   "author": "Your Name",
   "license": "MIT",
+  "dependencies": {
+    "electron-updater": "^6.6.2"
+  },
   "devDependencies": {
     "electron": "^37.2.4",
     "electron-builder": "^24.13.3"
@@ -29,6 +32,11 @@
     "appId": "com.mindkeep.app",
     "productName": "MindKeep",
     "artifactName": "${productName}.${ext}",
+    "publish": {
+      "provider": "github",
+      "owner": "your-username",
+      "repo": "mindkeep-desktop"
+    },
     "directories": {
       "output": "dist"
     },
