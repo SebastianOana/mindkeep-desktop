@@ -107,6 +107,36 @@
         </div>
     </div>
     
+    <!-- Update Available Modal -->
+    <div id="updateAvailableModal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <h3>🎉 Update Available!</h3>
+            <div class="update-info">
+                <div class="version-comparison">
+                    <div class="version-item">
+                        <span class="version-label">Current Version:</span>
+                        <span id="currentVersionText" class="version-number">1.0.0</span>
+                    </div>
+                    <div class="version-arrow">→</div>
+                    <div class="version-item">
+                        <span class="version-label">Latest Version:</span>
+                        <span id="latestVersionText" class="version-number">1.0.1</span>
+                    </div>
+                </div>
+                <div id="updateProgress" class="update-progress" style="display: none;">
+                    <div class="progress-bar">
+                        <div id="progressFill" class="progress-fill"></div>
+                    </div>
+                    <div id="progressText" class="progress-text">Downloading...</div>
+                </div>
+            </div>
+            <div class="modal-buttons">
+                <button id="installUpdateBtn" onclick="installUpdate()" class="modal-btn save">Install Update</button>
+                <button onclick="closeUpdateAvailableModal()" class="modal-btn cancel">Later</button>
+            </div>
+        </div>
+    </div>
+    
     <script>
         const fs = require('fs');
         const path = require('path');
@@ -456,22 +486,69 @@
             }
         }
         
+        const { shell } = require('electron');
+        
+        // Get current version from package.json
+        function getCurrentVersion() {
+            try {
+                const packagePath = path.join(process.cwd(), 'package.json');
+                if (fs.existsSync(packagePath)) {
+                    const packageData = JSON.parse(fs.readFileSync(packagePath, 'utf8'));
+                    return packageData.version;
+                }
+            } catch (error) {
+                console.error('Error reading package.json:', error);
+            }
+            return '1.0.0'; // fallback
+        }
+        
         async function checkForUpdates() {
             try {
                 const response = await fetch('https://api.github.com/repos/SebastianOana/mindkeep-desktop/releases/latest');
                 const release = await response.json();
-                const latestVersion = release.tag_name;
-                const currentVersion = '1.0.0'; // Update this when you release new versions
+                const latestVersion = release.tag_name.replace('v', '');
+                const currentVersion = getCurrentVersion();
                 
                 if (latestVersion !== currentVersion) {
-                    if (confirm(`New version ${latestVersion} available!\n\nCurrent: ${currentVersion}\nLatest: ${latestVersion}\n\nDownload now?`)) {
-                        window.open(release.html_url, '_blank');
-                    }
+                    document.getElementById('currentVersionText').textContent = currentVersion;
+                    document.getElementById('latestVersionText').textContent = latestVersion;
+                    document.getElementById('updateAvailableModal').style.display = 'flex';
                 } else {
                     showAlert('✅ Up to Date', 'You have the latest version!');
                 }
             } catch (error) {
                 showAlert('❌ Error', 'Could not check for updates. Please check your internet connection.');
+            }
+        }
+        
+        function closeUpdateAvailableModal() {
+            document.getElementById('updateAvailableModal').style.display = 'none';
+        }
+        
+        async function installUpdate() {
+            const installBtn = document.getElementById('installUpdateBtn');
+            installBtn.disabled = true;
+            installBtn.textContent = 'Opening Download...';
+            
+            try {
+                const response = await fetch('https://api.github.com/repos/SebastianOana/mindkeep-desktop/releases/latest');
+                const release = await response.json();
+                
+                const windowsAsset = release.assets.find(asset => 
+                    asset.name.endsWith('.exe') || asset.name.includes('Setup')
+                );
+                
+                if (windowsAsset) {
+                    shell.openExternal(windowsAsset.browser_download_url);
+                    closeUpdateAvailableModal();
+                    showAlert('✅ Download Started', 'The installer download has started. Please run it when complete to update.');
+                } else {
+                    throw new Error('No Windows installer found');
+                }
+            } catch (error) {
+                installBtn.disabled = false;
+                installBtn.textContent = 'Install Update';
+                showAlert('❌ Error', 'Failed to download update: ' + error.message);
             }
         }
         
