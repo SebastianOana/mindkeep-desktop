@@ -6,10 +6,11 @@
   "scripts": {
     "start": "electron .",
     "dev": "electron .",
-    "build": "electron-builder",
-    "build-win": "electron-builder --win",
-    "build-mac": "electron-builder --mac",
-    "build-linux": "electron-builder --linux",
+    "rebuild": "electron-rebuild",
+    "build": "npm run rebuild && electron-builder",
+    "build-win": "npm run rebuild && electron-builder --win",
+    "build-mac": "npm run rebuild && electron-builder --mac",
+    "build-linux": "npm run rebuild && electron-builder --linux",
     "dist": "npm run build"
   },
   "keywords": [
@@ -27,7 +28,8 @@
   },
   "devDependencies": {
     "electron": "^37.2.4",
-    "electron-builder": "^24.13.3"
+    "electron-builder": "^24.13.3",
+    "electron-rebuild": "^3.2.9"
   },
   "build": {
     "appId": "com.mindkeep.app",
@@ -45,6 +47,7 @@
       "target": "nsis",
       "artifactName": "${productName}-Setup.${ext}"
     },
+    "beforeBuild": "npm run rebuild",
     "mac": {
       "target": "dmg",
       "artifactName": "${productName}.${ext}",
