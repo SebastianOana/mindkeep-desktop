@@ -34,7 +34,7 @@
     "artifactName": "${productName}.${ext}",
     "publish": {
       "provider": "github",
-      "owner": "your-username",
+      "owner": "SebastianOana",
       "repo": "mindkeep-desktop"
     },
     "directories": {
