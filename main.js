@@ -1,6 +1,6 @@
 const { app, BrowserWindow, ipcMain, Menu } = require('electron');
 const path = require('path');
-const DatabaseManager = require('./database');
+const fs = require('fs');
 
 // Safely require electron-updater
 let autoUpdater;
@@ -12,7 +12,10 @@ try {
 }
 
 let mainWindow;
-let db;
+let notesCache = [];
+let categoriesCache = [];
+const notesFile = path.join(app.getPath('userData'), 'notes.json');
+const categoriesFile = path.join(app.getPath('userData'), 'categories.json');
 
 function createWindow() {
     mainWindow = new BrowserWindow({
@@ -72,58 +75,72 @@ ipcMain.handle('get-app-version', () => {
     return app.getVersion();
 });
 
-// Database IPC handlers
-ipcMain.handle('db-get-categories', async () => {
-    return await db.getCategories();
+// Cached JSON handlers for performance
+ipcMain.handle('db-get-categories', () => categoriesCache);
+
+ipcMain.handle('db-add-category', (event, name, color, parent) => {
+    categoriesCache.push({name, color, parent});
+    fs.writeFileSync(categoriesFile, JSON.stringify(categoriesCache, null, 2));
+    return categoriesCache.length;
 });
 
-ipcMain.handle('db-add-category', async (event, name, color, parent) => {
-    return await db.addCategory(name, color, parent);
+ipcMain.handle('db-delete-category', (event, name) => {
+    notesCache.forEach(note => { if (note.category === name) note.category = 'General'; });
+    categoriesCache = categoriesCache.filter(cat => cat.name !== name);
+    fs.writeFileSync(notesFile, JSON.stringify(notesCache, null, 2));
+    fs.writeFileSync(categoriesFile, JSON.stringify(categoriesCache, null, 2));
+    return 1;
 });
 
-ipcMain.handle('db-delete-category', async (event, name) => {
-    return await db.deleteCategory(name);
+ipcMain.handle('db-get-notes', () => notesCache);
+
+ipcMain.handle('db-save-note', (event, note) => {
+    const index = notesCache.findIndex(n => n.id === note.id);
+    if (index >= 0) notesCache[index] = note;
+    else notesCache.push(note);
+    fs.writeFileSync(notesFile, JSON.stringify(notesCache, null, 2));
+    return 1;
 });
 
-ipcMain.handle('db-get-notes', async () => {
-    return await db.getNotes();
+ipcMain.handle('db-delete-note', (event, id) => {
+    notesCache = notesCache.filter(n => n.id !== id);
+    fs.writeFileSync(notesFile, JSON.stringify(notesCache, null, 2));
+    return 1;
 });
 
-ipcMain.handle('db-save-note', async (event, note) => {
-    return await db.saveNote(note);
+ipcMain.handle('db-get-notes-sorted', (event, sortBy) => {
+    return [...notesCache].sort((a, b) => {
+        if (a.isPinned !== b.isPinned) return b.isPinned - a.isPinned;
+        if (sortBy.includes('title')) return sortBy.includes('DESC') ? b.title.localeCompare(a.title) : a.title.localeCompare(b.title);
+        return sortBy.includes('DESC') ? new Date(b.updatedAt) - new Date(a.updatedAt) : new Date(a.updatedAt) - new Date(b.updatedAt);
+    });
 });
 
-ipcMain.handle('db-delete-note', async (event, id) => {
-    return await db.deleteNote(id);
-});
-
-ipcMain.handle('db-search-notes', async (event, searchTerm) => {
-    return await db.searchNotes(searchTerm);
-});
-
-ipcMain.handle('db-get-notes-sorted', async (event, sortBy) => {
-    return await db.getNotes(sortBy);
-});
-
-ipcMain.handle('db-toggle-pin-note', async (event, id) => {
-    return await db.togglePinNote(id);
-});
-
-app.whenReady().then(async () => {
-    // Initialize database
-    const dbPath = path.join(app.getPath('userData'), 'mindkeep.db');
-    db = new DatabaseManager(dbPath);
-    
-    // Migrate existing JSON data if it exists
-    const notesDir = path.join(process.cwd(), 'notes');
-    const categoriesFile = path.join(process.cwd(), 'categories.json');
-    try {
-        await db.migrateFromJSON(notesDir, categoriesFile);
-        console.log('Migration from JSON completed');
-    } catch (error) {
-        console.log('No JSON data to migrate or migration failed:', error.message);
+ipcMain.handle('db-toggle-pin-note', (event, id) => {
+    const note = notesCache.find(n => n.id === id);
+    if (note) {
+        note.isPinned = !note.isPinned;
+        fs.writeFileSync(notesFile, JSON.stringify(notesCache, null, 2));
     }
-    
+    return 1;
+});
+
+function loadData() {
+    try {
+        notesCache = JSON.parse(fs.readFileSync(notesFile, 'utf8'));
+    } catch {
+        notesCache = [];
+    }
+    try {
+        categoriesCache = JSON.parse(fs.readFileSync(categoriesFile, 'utf8'));
+    } catch {
+        categoriesCache = [{name: 'General', color: '#4a9eff', parent: null}];
+        fs.writeFileSync(categoriesFile, JSON.stringify(categoriesCache, null, 2));
+    }
+}
+
+app.whenReady().then(() => {
+    loadData();
     createWindow();
     
     // Create menu with shortcuts
