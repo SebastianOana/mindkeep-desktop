@@ -1,6 +1,6 @@
 const { app, BrowserWindow, ipcMain, Menu } = require('electron');
 const path = require('path');
-const Database = require('./database');
+const DatabaseManager = require('./database');
 
 // Safely require electron-updater
 let autoUpdater;
@@ -112,7 +112,7 @@ ipcMain.handle('db-toggle-pin-note', async (event, id) => {
 app.whenReady().then(async () => {
     // Initialize database
     const dbPath = path.join(app.getPath('userData'), 'mindkeep.db');
-    db = new Database(dbPath);
+    db = new DatabaseManager(dbPath);
     
     // Migrate existing JSON data if it exists
     const notesDir = path.join(process.cwd(), 'notes');

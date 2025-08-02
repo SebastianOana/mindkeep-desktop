@@ -6,11 +6,10 @@
   "scripts": {
     "start": "electron .",
     "dev": "electron .",
-    "rebuild": "electron-rebuild",
-    "build": "npm run rebuild && electron-builder",
-    "build-win": "npm run rebuild && electron-builder --win",
-    "build-mac": "npm run rebuild && electron-builder --mac",
-    "build-linux": "npm run rebuild && electron-builder --linux",
+    "build": "electron-builder",
+    "build-win": "electron-builder --win",
+    "build-mac": "electron-builder --mac",
+    "build-linux": "electron-builder --linux",
     "dist": "npm run build"
   },
   "keywords": [
@@ -24,7 +23,7 @@
   "license": "MIT",
   "dependencies": {
     "electron-updater": "^6.6.2",
-    "sqlite3": "^5.1.7"
+    "better-sqlite3": "^9.4.3"
   },
   "devDependencies": {
     "electron": "^37.2.4",
@@ -47,7 +46,7 @@
       "target": "nsis",
       "artifactName": "${productName}-Setup.${ext}"
     },
-    "beforeBuild": "npm run rebuild",
+
     "mac": {
       "target": "dmg",
       "artifactName": "${productName}.${ext}",

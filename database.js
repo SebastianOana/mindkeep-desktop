@@ -1,131 +1,125 @@
-const sqlite3 = require('sqlite3').verbose();
+const Database = require('better-sqlite3');
 const path = require('path');
 
-class Database {
+class DatabaseManager {
     constructor(dbPath) {
-        this.db = new sqlite3.Database(dbPath);
+        this.db = new Database(dbPath);
         this.initTables();
     }
 
     initTables() {
-        this.db.serialize(() => {
-            // Categories table
-            this.db.run(`CREATE TABLE IF NOT EXISTS categories (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                name TEXT UNIQUE NOT NULL,
-                color TEXT NOT NULL,
-                parent TEXT,
-                created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-            )`);
+        // Categories table
+        this.db.exec(`CREATE TABLE IF NOT EXISTS categories (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT UNIQUE NOT NULL,
+            color TEXT NOT NULL,
+            parent TEXT,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        )`);
 
-            // Notes table
-            this.db.run(`CREATE TABLE IF NOT EXISTS notes (
-                id TEXT PRIMARY KEY,
-                title TEXT NOT NULL,
-                content TEXT,
-                category TEXT NOT NULL,
-                description TEXT,
-                tags TEXT,
-                is_pinned INTEGER DEFAULT 0,
-                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-                updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
-            )`);
-            
-            // Add is_pinned column if it doesn't exist (for existing databases)
-            this.db.run(`ALTER TABLE notes ADD COLUMN is_pinned INTEGER DEFAULT 0`, (err) => {
-                // Ignore error if column already exists
-            });
+        // Notes table
+        this.db.exec(`CREATE TABLE IF NOT EXISTS notes (
+            id TEXT PRIMARY KEY,
+            title TEXT NOT NULL,
+            content TEXT,
+            category TEXT NOT NULL,
+            description TEXT,
+            tags TEXT,
+            is_pinned INTEGER DEFAULT 0,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        )`);
+        
+        // Add is_pinned column if it doesn't exist (for existing databases)
+        try {
+            this.db.exec(`ALTER TABLE notes ADD COLUMN is_pinned INTEGER DEFAULT 0`);
+        } catch (err) {
+            // Ignore error if column already exists
+        }
 
-            // Insert default categories if they don't exist
-            this.db.run(`INSERT OR IGNORE INTO categories (name, color, parent) VALUES 
-                ('General', '#4a9eff', NULL),
-                ('Work', '#28a745', NULL),
-                ('Projects', '#ffc107', 'Work'),
-                ('Meetings', '#17a2b8', 'Work')`);
-        });
+        // Insert default categories if they don't exist
+        this.db.exec(`INSERT OR IGNORE INTO categories (name, color, parent) VALUES 
+            ('General', '#4a9eff', NULL),
+            ('Work', '#28a745', NULL),
+            ('Projects', '#ffc107', 'Work'),
+            ('Meetings', '#17a2b8', 'Work')`);
     }
 
     // Categories methods
     getCategories() {
-        return new Promise((resolve, reject) => {
-            this.db.all('SELECT * FROM categories ORDER BY name', (err, rows) => {
-                if (err) reject(err);
-                else resolve(rows.map(row => ({
-                    name: row.name,
-                    color: row.color,
-                    parent: row.parent
-                })));
-            });
-        });
+        const rows = this.db.prepare('SELECT * FROM categories ORDER BY name').all();
+        return Promise.resolve(rows.map(row => ({
+            name: row.name,
+            color: row.color,
+            parent: row.parent
+        })));
     }
 
     addCategory(name, color, parent = null) {
-        return new Promise((resolve, reject) => {
-            this.db.run('INSERT INTO categories (name, color, parent) VALUES (?, ?, ?)', 
-                [name, color, parent], function(err) {
-                if (err) reject(err);
-                else resolve(this.lastID);
-            });
-        });
+        try {
+            const stmt = this.db.prepare('INSERT INTO categories (name, color, parent) VALUES (?, ?, ?)');
+            const result = stmt.run(name, color, parent);
+            return Promise.resolve(result.lastInsertRowid);
+        } catch (err) {
+            return Promise.reject(err);
+        }
     }
 
     deleteCategory(name) {
-        return new Promise((resolve, reject) => {
-            this.db.serialize(() => {
-                // Move notes to General
-                this.db.run('UPDATE notes SET category = "General" WHERE category = ?', [name]);
-                // Update child categories to root
-                this.db.run('UPDATE categories SET parent = NULL WHERE parent = ?', [name]);
-                // Delete category
-                this.db.run('DELETE FROM categories WHERE name = ?', [name], function(err) {
-                    if (err) reject(err);
-                    else resolve(this.changes);
-                });
+        try {
+            const transaction = this.db.transaction(() => {
+                this.db.prepare('UPDATE notes SET category = "General" WHERE category = ?').run(name);
+                this.db.prepare('UPDATE categories SET parent = NULL WHERE parent = ?').run(name);
+                const result = this.db.prepare('DELETE FROM categories WHERE name = ?').run(name);
+                return result.changes;
             });
-        });
+            return Promise.resolve(transaction());
+        } catch (err) {
+            return Promise.reject(err);
+        }
     }
 
     // Notes methods
     getNotes(sortBy = 'updated_at DESC') {
-        return new Promise((resolve, reject) => {
-            this.db.all(`SELECT * FROM notes ORDER BY is_pinned DESC, ${sortBy}`, (err, rows) => {
-                if (err) reject(err);
-                else resolve(rows.map(row => ({
-                    id: row.id,
-                    title: row.title,
-                    content: row.content,
-                    category: row.category,
-                    description: row.description,
-                    tags: row.tags ? row.tags.split(',') : [],
-                    isPinned: row.is_pinned === 1,
-                    createdAt: row.created_at,
-                    updatedAt: row.updated_at
-                })));
-            });
-        });
+        try {
+            const rows = this.db.prepare(`SELECT * FROM notes ORDER BY is_pinned DESC, ${sortBy}`).all();
+            return Promise.resolve(rows.map(row => ({
+                id: row.id,
+                title: row.title,
+                content: row.content,
+                category: row.category,
+                description: row.description,
+                tags: row.tags ? row.tags.split(',') : [],
+                isPinned: row.is_pinned === 1,
+                createdAt: row.created_at,
+                updatedAt: row.updated_at
+            })));
+        } catch (err) {
+            return Promise.reject(err);
+        }
     }
 
     saveNote(note) {
-        return new Promise((resolve, reject) => {
+        try {
             const tags = Array.isArray(note.tags) ? note.tags.join(',') : note.tags;
-            this.db.run(`INSERT OR REPLACE INTO notes 
+            const stmt = this.db.prepare(`INSERT OR REPLACE INTO notes 
                 (id, title, content, category, description, tags, is_pinned, created_at, updated_at) 
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-                [note.id, note.title, note.content, note.category, note.description, 
-                 tags, note.isPinned ? 1 : 0, note.createdAt, note.updatedAt], function(err) {
-                if (err) reject(err);
-                else resolve(this.changes);
-            });
-        });
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`);
+            const result = stmt.run(note.id, note.title, note.content, note.category, note.description, 
+                 tags, note.isPinned ? 1 : 0, note.createdAt, note.updatedAt);
+            return Promise.resolve(result.changes);
+        } catch (err) {
+            return Promise.reject(err);
+        }
     }
 
     deleteNote(id) {
-        return new Promise((resolve, reject) => {
-            this.db.run('DELETE FROM notes WHERE id = ?', [id], function(err) {
-                if (err) reject(err);
-                else resolve(this.changes);
-            });
-        });
+        try {
+            const result = this.db.prepare('DELETE FROM notes WHERE id = ?').run(id);
+            return Promise.resolve(result.changes);
+        } catch (err) {
+            return Promise.reject(err);
+        }
     }
 
     searchNotes(searchTerm) {
@@ -189,12 +183,12 @@ class Database {
     }
 
     togglePinNote(id) {
-        return new Promise((resolve, reject) => {
-            this.db.run('UPDATE notes SET is_pinned = 1 - is_pinned WHERE id = ?', [id], function(err) {
-                if (err) reject(err);
-                else resolve(this.changes);
-            });
-        });
+        try {
+            const result = this.db.prepare('UPDATE notes SET is_pinned = 1 - is_pinned WHERE id = ?').run(id);
+            return Promise.resolve(result.changes);
+        } catch (err) {
+            return Promise.reject(err);
+        }
     }
 
     close() {
@@ -202,4 +196,4 @@ class Database {
     }
 }
 
-module.exports = Database;
+module.exports = DatabaseManager;
