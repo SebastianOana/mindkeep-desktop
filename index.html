@@ -115,12 +115,12 @@
                 <div class="version-comparison">
                     <div class="version-item">
                         <span class="version-label">Current Version:</span>
-                        <span id="currentVersionText" class="version-number">1.0.0</span>
+                        <span id="currentVersionText" class="version-number"></span>
                     </div>
                     <div class="version-arrow">→</div>
                     <div class="version-item">
                         <span class="version-label">Latest Version:</span>
-                        <span id="latestVersionText" class="version-number">1.0.1</span>
+                        <span id="latestVersionText" class="version-number"></span>
                     </div>
                 </div>
                 <div id="updateProgress" class="update-progress" style="display: none;">
@@ -491,15 +491,40 @@
         // Get current version from package.json
         function getCurrentVersion() {
             try {
-                const packagePath = path.join(process.cwd(), 'package.json');
-                if (fs.existsSync(packagePath)) {
-                    const packageData = JSON.parse(fs.readFileSync(packagePath, 'utf8'));
-                    return packageData.version;
-                }
+                // Try requiring package.json from app root
+                const packageData = require('./package.json');
+                return packageData.version;
             } catch (error) {
-                console.error('Error reading package.json:', error);
+                try {
+                    // Try reading from resources path
+                    const resourcesPath = path.join(process.resourcesPath, 'app', 'package.json');
+                    if (fs.existsSync(resourcesPath)) {
+                        const packageData = JSON.parse(fs.readFileSync(resourcesPath, 'utf8'));
+                        return packageData.version;
+                    }
+                } catch (e) {
+                    try {
+                        // Try reading from current working directory
+                        const packagePath = path.join(process.cwd(), 'package.json');
+                        if (fs.existsSync(packagePath)) {
+                            const packageData = JSON.parse(fs.readFileSync(packagePath, 'utf8'));
+                            return packageData.version;
+                        }
+                    } catch (e2) {
+                        try {
+                            // Try reading from __dirname
+                            const packagePath = path.join(__dirname, 'package.json');
+                            if (fs.existsSync(packagePath)) {
+                                const packageData = JSON.parse(fs.readFileSync(packagePath, 'utf8'));
+                                return packageData.version;
+                            }
+                        } catch (e3) {
+                            console.error('Could not find package.json in any location');
+                        }
+                    }
+                }
             }
-            return '1.0.0'; // fallback
+            return 'Unknown';
         }
         
         async function checkForUpdates() {

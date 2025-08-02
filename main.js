@@ -1,5 +1,13 @@
 const { app, BrowserWindow } = require('electron');
-const { autoUpdater } = require('electron-updater');
+
+// Safely require electron-updater
+let autoUpdater;
+try {
+    autoUpdater = require('electron-updater').autoUpdater;
+} catch (error) {
+    console.log('electron-updater not available:', error.message);
+    autoUpdater = null;
+}
 
 function createWindow() {
     const win = new BrowserWindow({
@@ -16,7 +24,11 @@ function createWindow() {
 
 app.whenReady().then(() => {
     createWindow();
-    autoUpdater.checkForUpdatesAndNotify();
+    
+    // Only check for updates in production
+    if (autoUpdater) {
+        autoUpdater.checkForUpdatesAndNotify();
+    }
 });
 
 app.on('window-all-closed', () => {
