@@ -1,4 +1,4 @@
-const { app, BrowserWindow } = require('electron');
+const { app, BrowserWindow, ipcMain } = require('electron');
 
 // Safely require electron-updater
 let autoUpdater;
@@ -9,8 +9,10 @@ try {
     autoUpdater = null;
 }
 
+let mainWindow;
+
 function createWindow() {
-    const win = new BrowserWindow({
+    mainWindow = new BrowserWindow({
         width: 1200,
         height: 800,
         webPreferences: {
@@ -19,16 +21,56 @@ function createWindow() {
         }
     });
 
-    win.loadFile('index.html');
+    mainWindow.loadFile('index.html');
+    
+    // Setup auto-updater events
+    if (autoUpdater) {
+        autoUpdater.on('checking-for-update', () => {
+            mainWindow.webContents.send('update-checking');
+        });
+        
+        autoUpdater.on('update-available', (info) => {
+            mainWindow.webContents.send('update-available', info.version);
+        });
+        
+        autoUpdater.on('update-not-available', () => {
+            mainWindow.webContents.send('update-not-available');
+        });
+        
+        autoUpdater.on('error', (err) => {
+            mainWindow.webContents.send('update-error', err.message);
+        });
+        
+        autoUpdater.on('download-progress', (progressObj) => {
+            mainWindow.webContents.send('update-progress', progressObj.percent);
+        });
+        
+        autoUpdater.on('update-downloaded', () => {
+            mainWindow.webContents.send('update-downloaded');
+        });
+    }
 }
+
+// IPC handlers for update functionality
+ipcMain.handle('check-for-updates', async () => {
+    if (autoUpdater) {
+        return await autoUpdater.checkForUpdates();
+    }
+    return null;
+});
+
+ipcMain.handle('install-update', () => {
+    if (autoUpdater) {
+        autoUpdater.quitAndInstall();
+    }
+});
+
+ipcMain.handle('get-app-version', () => {
+    return app.getVersion();
+});
 
 app.whenReady().then(() => {
     createWindow();
-    
-    // Only check for updates in production
-    if (autoUpdater) {
-        autoUpdater.checkForUpdatesAndNotify();
-    }
 });
 
 app.on('window-all-closed', () => {

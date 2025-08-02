@@ -22,13 +22,52 @@
                         <option value="all">All Notes</option>
                     </select>
                     <div class="category-actions">
-                        <button class="category-btn" onclick="createNewCategory()">+ Category</button>
-                        <button class="category-btn" onclick="manageCategories()">Manage</button>
+                        <button class="category-btn" onclick="createNewCategory()">
+                            <span class="btn-icon">🎨</span>
+                            <span class="btn-text">Category</span>
+                        </button>
+                        <button class="category-btn" onclick="manageCategories()">
+                            <span class="btn-icon">⚙️</span>
+                            <span class="btn-text">Manage</span>
+                        </button>
                     </div>
-                    <button class="new-note-btn" onclick="createNewNote()">+ New Note</button>
+                    <div class="bulk-actions" id="bulkActions" style="display: none;" data-selected-count="0">
+                        <div class="bulk-info">
+                            <span class="selection-count">0 selected</span>
+                            <button class="bulk-exit-btn" onclick="toggleBulkMode()" title="Exit selection mode">✕</button>
+                        </div>
+                        <div class="bulk-buttons">
+                            <button class="bulk-btn delete-btn" onclick="bulkDelete()" title="Delete selected notes">
+                                <span class="btn-icon">🗑️</span>
+                                <span class="btn-text">Delete</span>
+                            </button>
+                            <button class="bulk-btn move-btn" onclick="bulkMove()" title="Move selected notes">
+                                <span class="btn-icon">📁</span>
+                                <span class="btn-text">Move</span>
+                            </button>
+                            <button class="bulk-btn duplicate-btn" onclick="findDuplicates()" title="Find duplicate notes">
+                                <span class="btn-icon">🔍</span>
+                                <span class="btn-text">Duplicates</span>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="note-actions">
+                        <button class="new-note-btn" onclick="createNewNote()">
+                            <span class="btn-icon">✏️</span>
+                            <span class="btn-text">New Note</span>
+                        </button>
+                        <button class="bulk-toggle-btn" onclick="toggleBulkMode()">
+                            <span class="btn-icon">☑️</span>
+                            <span class="btn-text">Select Multiple</span>
+                        </button>
+                    </div>
                 </div>
                 <div id="notesList" class="notes-list">
                     <div class="no-notes-message">No notes found</div>
+                </div>
+                <div id="notePreview" class="note-preview" style="display: none;">
+                    <h4 id="previewTitle"></h4>
+                    <p id="previewContent"></p>
                 </div>
             </div>
             
@@ -43,8 +82,18 @@
                     <div class="viewer-header">
                         <h1 id="viewerTitle"></h1>
                         <div class="viewer-actions">
-                            <button onclick="editNote()" class="edit-btn">Edit</button>
-                            <button onclick="deleteNote()" class="delete-btn">Delete</button>
+                            <button onclick="editNote()" class="edit-btn">
+                                <span class="btn-icon">✏️</span>
+                                <span class="btn-text">Edit</span>
+                            </button>
+                            <button onclick="moveNoteToCategory()" class="move-btn">
+                                <span class="btn-icon">📁</span>
+                                <span class="btn-text">Move</span>
+                            </button>
+                            <button onclick="deleteNote()" class="delete-btn">
+                                <span class="btn-icon">🗑️</span>
+                                <span class="btn-text">Delete</span>
+                            </button>
                         </div>
                     </div>
                     <div id="viewerMeta" class="viewer-meta"></div>
@@ -65,6 +114,24 @@
                         </select>
                         <input type="text" id="noteTags" class="tags-input" placeholder="Tags (comma separated)...">
                         <input type="text" id="noteDescription" class="tags-input" placeholder="Description...">
+                        <div class="editor-toolbar">
+                            <button onclick="formatText('bold')" class="toolbar-btn"><b>B</b></button>
+                            <button onclick="formatText('italic')" class="toolbar-btn"><i>I</i></button>
+                            <button onclick="formatText('underline')" class="toolbar-btn"><u>U</u></button>
+                            <button onclick="formatText('strikeThrough')" class="toolbar-btn"><s>S</s></button>
+                            <button onclick="formatHeading('h1')" class="toolbar-btn">H1</button>
+                            <button onclick="formatHeading('h2')" class="toolbar-btn">H2</button>
+                            <button onclick="formatHeading('h3')" class="toolbar-btn">H3</button>
+                            <button onclick="formatText('insertUnorderedList')" class="toolbar-btn">•</button>
+                            <button onclick="formatText('insertOrderedList')" class="toolbar-btn">1.</button>
+                            <button onclick="formatCode()" class="toolbar-btn">&lt;/&gt;</button>
+                            <button onclick="highlightText()" class="toolbar-btn">🔆</button>
+                            <button onclick="alignText('left')" class="toolbar-btn">←</button>
+                            <button onclick="alignText('center')" class="toolbar-btn">↔</button>
+                            <button onclick="alignText('right')" class="toolbar-btn">→</button>
+                            <button onclick="undoRedo('undo')" class="toolbar-btn">↶</button>
+                            <button onclick="undoRedo('redo')" class="toolbar-btn">↷</button>
+                        </div>
                         <div id="noteContent" class="content-editor" contenteditable="true" data-placeholder="Start writing your note..."></div>
                     </div>
                 </div>
@@ -77,10 +144,25 @@
         <div class="modal-content">
             <h3>🎨 Create New Category</h3>
             <input type="text" id="categoryNameInput" placeholder="Category name" class="modal-input">
+            <select id="parentCategoryInput" class="modal-input">
+                <option value="">No parent (root category)</option>
+            </select>
             <input type="color" id="categoryColorInput" value="#4a9eff" class="modal-input">
             <div class="modal-buttons">
                 <button onclick="saveCategoryModal()" class="modal-btn save">Create</button>
                 <button onclick="closeCategoryModal()" class="modal-btn cancel">Cancel</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Delete Category Confirmation Modal -->
+    <div id="deleteCategoryModal" class="modal" style="display: none;">
+        <div class="modal-content delete-category-modal">
+            <h3>🗑️ Delete Category</h3>
+            <div id="deleteCategoryMessage" class="delete-category-content"></div>
+            <div class="modal-buttons">
+                <button id="confirmDeleteBtn" class="modal-btn delete-confirm">Delete Category</button>
+                <button onclick="closeDeleteCategoryModal()" class="modal-btn cancel">Cancel</button>
             </div>
         </div>
     </div>
@@ -103,6 +185,46 @@
             <div id="categoriesList" class="categories-list"></div>
             <div class="modal-buttons">
                 <button onclick="closeManageCategoriesModal()" class="modal-btn cancel">Close</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Move Note Modal -->
+    <div id="moveNoteModal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <h3>📁 Move Note</h3>
+            <select id="moveToCategory" class="modal-input">
+                <option value="">Select Category</option>
+            </select>
+            <div class="modal-buttons">
+                <button onclick="confirmMoveNote()" class="modal-btn save">Move</button>
+                <button onclick="closeMoveNoteModal()" class="modal-btn cancel">Cancel</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Bulk Move Modal -->
+    <div id="bulkMoveModal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <h3>📁 Move Selected Notes</h3>
+            <p>Move <span id="selectedCount">0</span> selected notes to:</p>
+            <select id="bulkMoveToCategory" class="modal-input">
+                <option value="">Select Category</option>
+            </select>
+            <div class="modal-buttons">
+                <button onclick="confirmBulkMove()" class="modal-btn save">Move</button>
+                <button onclick="closeBulkMoveModal()" class="modal-btn cancel">Cancel</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Duplicates Modal -->
+    <div id="duplicatesModal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <h3>🔍 Duplicate Notes</h3>
+            <div id="duplicatesList" class="duplicates-list"></div>
+            <div class="modal-buttons">
+                <button onclick="closeDuplicatesModal()" class="modal-btn cancel">Close</button>
             </div>
         </div>
     </div>
@@ -142,7 +264,12 @@
         const path = require('path');
         
         // App data
-        let categories = [{ name: 'General', color: '#4a9eff' }];
+        let categories = [
+            { name: 'General', color: '#4a9eff', parent: null },
+            { name: 'Work', color: '#28a745', parent: null },
+            { name: 'Projects', color: '#ffc107', parent: 'Work' },
+            { name: 'Meetings', color: '#17a2b8', parent: 'Work' }
+        ];
         let notes = [];
         const appDir = process.cwd();
         const notesDir = path.join(appDir, 'notes');
@@ -200,33 +327,77 @@
         }
         
         let currentCategory = 'all';
+        let bulkMode = false;
+        let selectedNotes = new Set();
         
         function updateCategorySelector() {
             const selector = document.getElementById('categorySelector');
             const noteCategory = document.getElementById('noteCategory');
             
-            const options = '<option value="all">All Notes</option>' + 
-                categories.map(cat => `<option value="${cat.name}">${cat.name}</option>`).join('');
+            const buildCategoryOptions = (cats) => {
+                const rootCats = cats.filter(cat => !cat.parent);
+                let options = '';
+                
+                rootCats.forEach(cat => {
+                    options += `<option value="${cat.name}">${cat.name}</option>`;
+                    const children = cats.filter(c => c.parent === cat.name);
+                    children.forEach(child => {
+                        options += `<option value="${child.name}">\u00A0\u00A0\u00A0\u00A0${child.name}</option>`;
+                    });
+                });
+                
+                return options;
+            };
+            
+            const options = '<option value="all">All Notes</option>' + buildCategoryOptions(categories);
             selector.innerHTML = options;
             selector.value = currentCategory;
             
-            // Add change event listener
             selector.onchange = function() {
                 currentCategory = this.value;
                 updateNotesList();
             };
             
-            const noteOptions = '<option value="">Select Category</option>' + 
-                categories.map(cat => `<option value="${cat.name}">${cat.name}</option>`).join('');
+            const noteOptions = '<option value="">Select Category</option>' + buildCategoryOptions(categories);
             noteCategory.innerHTML = noteOptions;
+        }
+        
+        function showPreview(event, noteId) {
+            const note = notes.find(n => n.id === noteId);
+            if (!note) return;
+            
+            const preview = document.getElementById('notePreview');
+            const title = document.getElementById('previewTitle');
+            const content = document.getElementById('previewContent');
+            
+            title.textContent = note.title;
+            content.textContent = note.content ? note.content.replace(/<[^>]*>/g, '').substring(0, 150) + '...' : 'No content';
+            
+            preview.style.display = 'block';
+            preview.style.left = event.pageX + 10 + 'px';
+            preview.style.top = event.pageY + 10 + 'px';
+        }
+        
+        function hidePreview() {
+            document.getElementById('notePreview').style.display = 'none';
         }
         
         function updateNotesList() {
             const notesList = document.getElementById('notesList');
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
             
             // Filter notes by selected category
-            const filteredNotes = currentCategory === 'all' ? 
+            let filteredNotes = currentCategory === 'all' ? 
                 notes : notes.filter(note => note.category === currentCategory);
+            
+            // Filter by search term
+            if (searchTerm) {
+                filteredNotes = filteredNotes.filter(note => 
+                    note.title.toLowerCase().includes(searchTerm) ||
+                    note.content.toLowerCase().includes(searchTerm) ||
+                    note.description.toLowerCase().includes(searchTerm)
+                );
+            }
             
             if (filteredNotes.length === 0) {
                 notesList.innerHTML = '<div class="no-notes-message">No notes found</div>';
@@ -235,13 +406,263 @@
             
             notesList.innerHTML = filteredNotes.map(note => {
                 const category = categories.find(cat => cat.name === note.category) || { color: '#4a9eff' };
+                const isSelected = selectedNotes.has(note.id);
+                const checkboxHtml = bulkMode ? `<input type="checkbox" ${isSelected ? 'checked' : ''} onchange="toggleNoteSelection('${note.id}')" onclick="event.stopPropagation()">` : '';
+                
                 return `
-                    <div class="note-item" style="border-left: 4px solid ${category.color}; padding: 1rem; margin-bottom: 0.5rem; background: #404040; border-radius: 4px; cursor: pointer;" onclick="viewNote('${note.id}')">
-                        <div style="font-weight: bold; color: #e0e0e0;">${note.title}</div>
-                        <div style="color: #888; font-size: 0.9rem; margin-top: 0.5rem;">${new Date(note.updatedAt).toLocaleDateString()}</div>
+                    <div class="note-item ${isSelected ? 'selected' : ''}" style="border-left: 4px solid ${category.color}; padding: 1rem; margin-bottom: 0.5rem; background: ${isSelected ? '#555' : '#404040'}; border-radius: 4px; cursor: pointer; display: flex; align-items: center; gap: 10px;" onclick="${bulkMode ? `toggleNoteSelection('${note.id}')` : `viewNote('${note.id}')`}" onmouseenter="showPreview(event, '${note.id}')" onmouseleave="hidePreview()">
+                        ${checkboxHtml}
+                        <div style="flex: 1;">
+                            <div style="font-weight: bold; color: #e0e0e0;">${processNoteLinks(note.title)}</div>
+                            <div style="color: #888; font-size: 0.9rem; margin-top: 0.5rem;">${new Date(note.updatedAt).toLocaleDateString()}</div>
+                        </div>
                     </div>
                 `;
             }).join('');
+        }
+        
+        // Process note links [[Note Name]]
+        function processNoteLinks(text) {
+            return text.replace(/\[\[([^\]]+)\]\]/g, (match, noteName) => {
+                const linkedNote = notes.find(note => note.title.toLowerCase() === noteName.toLowerCase());
+                if (linkedNote) {
+                    return `<span class="note-link" onclick="viewNote('${linkedNote.id}'); event.stopPropagation();" style="color: #4a9eff; cursor: pointer; text-decoration: underline;">${noteName}</span>`;
+                }
+                return `<span style="color: #888;">${noteName}</span>`;
+            });
+        }
+        
+        // Bulk operations
+        function toggleBulkMode() {
+            bulkMode = !bulkMode;
+            selectedNotes.clear();
+            const bulkActions = document.getElementById('bulkActions');
+            const toggleBtn = document.querySelector('.bulk-toggle-btn');
+            const toggleIcon = toggleBtn.querySelector('.btn-icon');
+            const toggleText = toggleBtn.querySelector('.btn-text');
+            
+            bulkActions.style.display = bulkMode ? 'flex' : 'none';
+            
+            if (bulkMode) {
+                toggleBtn.style.display = 'none';
+            } else {
+                toggleBtn.style.display = 'flex';
+                toggleIcon.textContent = '☑️';
+                toggleText.textContent = 'Select Multiple';
+                toggleBtn.style.background = 'linear-gradient(135deg, #6c757d, #5a6268)';
+                toggleBtn.classList.remove('exit-mode');
+            }
+            
+            updateNotesList();
+        }
+        
+        function toggleNoteSelection(noteId) {
+            if (selectedNotes.has(noteId)) {
+                selectedNotes.delete(noteId);
+            } else {
+                selectedNotes.add(noteId);
+            }
+            
+            // Update selection counter immediately
+            updateSelectionCounter();
+            updateNotesList();
+        }
+        
+        function updateSelectionCounter() {
+            const bulkActions = document.getElementById('bulkActions');
+            const selectionCount = document.querySelector('.selection-count');
+            
+            if (bulkActions && selectionCount && bulkMode) {
+                const count = selectedNotes.size;
+                bulkActions.setAttribute('data-selected-count', count);
+                selectionCount.textContent = `${count} selected`;
+                
+                // Enable/disable action buttons based on selection
+                const actionButtons = document.querySelectorAll('.bulk-btn:not(.bulk-exit-btn)');
+                actionButtons.forEach(btn => {
+                    btn.disabled = count === 0;
+                    btn.style.opacity = count === 0 ? '0.5' : '1';
+                });
+            }
+        }
+        
+        function bulkDelete() {
+            if (selectedNotes.size === 0) {
+                showAlert('⚠️ Warning', 'No notes selected.');
+                return;
+            }
+            
+            if (confirm(`Delete ${selectedNotes.size} selected notes?`)) {
+                selectedNotes.forEach(noteId => {
+                    try {
+                        const filePath = path.join(notesDir, noteId + '.json');
+                        if (fs.existsSync(filePath)) {
+                            fs.unlinkSync(filePath);
+                        }
+                        notes = notes.filter(note => note.id !== noteId);
+                    } catch (error) {
+                        console.error('Error deleting note:', error);
+                    }
+                });
+                
+                selectedNotes.clear();
+                updateNotesList();
+                showAlert('✅ Success', 'Selected notes deleted!');
+            }
+        }
+        
+        function bulkMove() {
+            if (selectedNotes.size === 0) {
+                showAlert('⚠️ Warning', 'No notes selected.');
+                return;
+            }
+            
+            document.getElementById('selectedCount').textContent = selectedNotes.size;
+            const bulkMoveSelect = document.getElementById('bulkMoveToCategory');
+            bulkMoveSelect.innerHTML = '<option value="">Select Category</option>' + 
+                categories.map(cat => `<option value="${cat.name}">${cat.name}</option>`).join('');
+            document.getElementById('bulkMoveModal').style.display = 'flex';
+        }
+        
+        function confirmBulkMove() {
+            const newCategory = document.getElementById('bulkMoveToCategory').value;
+            if (!newCategory) {
+                showAlert('⚠️ Warning', 'Please select a category.');
+                return;
+            }
+            
+            selectedNotes.forEach(noteId => {
+                const note = notes.find(n => n.id === noteId);
+                if (note) {
+                    note.category = newCategory;
+                    note.updatedAt = new Date().toISOString();
+                    try {
+                        const filePath = path.join(notesDir, note.id + '.json');
+                        fs.writeFileSync(filePath, JSON.stringify(note, null, 2));
+                    } catch (error) {
+                        console.error('Error updating note:', error);
+                    }
+                }
+            });
+            
+            selectedNotes.clear();
+            updateNotesList();
+            closeBulkMoveModal();
+            showAlert('✅ Success', 'Notes moved successfully!');
+        }
+        
+        function closeBulkMoveModal() {
+            document.getElementById('bulkMoveModal').style.display = 'none';
+        }
+        
+        // Find duplicates
+        function findDuplicates() {
+            const duplicates = [];
+            const seen = new Map();
+            
+            notes.forEach(note => {
+                const key = note.title.toLowerCase().trim();
+                if (seen.has(key)) {
+                    const existing = seen.get(key);
+                    if (!duplicates.find(d => d.original.id === existing.id)) {
+                        duplicates.push({ original: existing, duplicates: [note] });
+                    } else {
+                        duplicates.find(d => d.original.id === existing.id).duplicates.push(note);
+                    }
+                } else {
+                    seen.set(key, note);
+                }
+            });
+            
+            if (duplicates.length === 0) {
+                showAlert('✅ No Duplicates', 'No duplicate notes found!');
+                return;
+            }
+            
+            const duplicatesList = document.getElementById('duplicatesList');
+            duplicatesList.innerHTML = duplicates.map(group => `
+                <div class="duplicate-group" style="margin-bottom: 20px; padding: 15px; background: #333; border-radius: 8px;">
+                    <h4 style="color: #e0e0e0; margin-bottom: 10px;">"${group.original.title}"</h4>
+                    <div class="duplicate-item" style="margin-bottom: 10px; padding: 10px; background: #404040; border-radius: 4px;">
+                        <strong>Original:</strong> ${new Date(group.original.createdAt).toLocaleDateString()}
+                        <button onclick="viewNote('${group.original.id}'); closeDuplicatesModal();" style="margin-left: 10px;">View</button>
+                    </div>
+                    ${group.duplicates.map(dup => `
+                        <div class="duplicate-item" style="margin-bottom: 5px; padding: 10px; background: #555; border-radius: 4px;">
+                            <strong>Duplicate:</strong> ${new Date(dup.createdAt).toLocaleDateString()}
+                            <button onclick="viewNote('${dup.id}'); closeDuplicatesModal();" style="margin-left: 10px;">View</button>
+                            <button onclick="deleteDuplicate('${dup.id}')" style="margin-left: 5px; background: #d32f2f;">Delete</button>
+                        </div>
+                    `).join('')}
+                </div>
+            `).join('');
+            
+            document.getElementById('duplicatesModal').style.display = 'flex';
+        }
+        
+        function deleteDuplicate(noteId) {
+            if (confirm('Delete this duplicate note?')) {
+                try {
+                    const filePath = path.join(notesDir, noteId + '.json');
+                    if (fs.existsSync(filePath)) {
+                        fs.unlinkSync(filePath);
+                    }
+                    notes = notes.filter(note => note.id !== noteId);
+                    updateNotesList();
+                    findDuplicates(); // Refresh duplicates list
+                    showAlert('✅ Success', 'Duplicate note deleted!');
+                } catch (error) {
+                    showAlert('❌ Error', 'Error deleting note: ' + error.message);
+                }
+            }
+        }
+        
+        function closeDuplicatesModal() {
+            document.getElementById('duplicatesModal').style.display = 'none';
+        }
+        
+        // Move single note
+        function moveNoteToCategory() {
+            if (!currentNote) return;
+            
+            const moveSelect = document.getElementById('moveToCategory');
+            moveSelect.innerHTML = '<option value="">Select Category</option>' + 
+                categories.filter(cat => cat.name !== currentNote.category)
+                    .map(cat => `<option value="${cat.name}">${cat.name}</option>`).join('');
+            document.getElementById('moveNoteModal').style.display = 'flex';
+        }
+        
+        function confirmMoveNote() {
+            const newCategory = document.getElementById('moveToCategory').value;
+            if (!newCategory) {
+                showAlert('⚠️ Warning', 'Please select a category.');
+                return;
+            }
+            
+            currentNote.category = newCategory;
+            currentNote.updatedAt = new Date().toISOString();
+            
+            try {
+                const filePath = path.join(notesDir, currentNote.id + '.json');
+                fs.writeFileSync(filePath, JSON.stringify(currentNote, null, 2));
+                
+                // Update in array
+                const index = notes.findIndex(n => n.id === currentNote.id);
+                if (index >= 0) {
+                    notes[index] = currentNote;
+                }
+                
+                updateNotesList();
+                viewNote(currentNote.id); // Refresh viewer
+                closeMoveNoteModal();
+                showAlert('✅ Success', 'Note moved successfully!');
+            } catch (error) {
+                showAlert('❌ Error', 'Error moving note: ' + error.message);
+            }
+        }
+        
+        function closeMoveNoteModal() {
+            document.getElementById('moveNoteModal').style.display = 'none';
         }
         
         let currentNote = null;
@@ -258,8 +679,9 @@
                     <span>Category: ${currentNote.category}</span> • 
                     <span>Created: ${new Date(currentNote.createdAt).toLocaleDateString()}</span> • 
                     <span>Updated: ${new Date(currentNote.updatedAt).toLocaleDateString()}</span>
+                    ${currentNote.description ? `<br><span style="color: #4a9eff; font-style: italic;">📝 ${currentNote.description}</span>` : ''}
                 `;
-                document.getElementById('viewerContent').innerHTML = currentNote.content || '<em>No content</em>';
+                document.getElementById('viewerContent').innerHTML = processNoteLinks(currentNote.content) || '<em>No content</em>';
             }
         }
         
@@ -269,7 +691,7 @@
                 document.getElementById('editor').style.display = 'flex';
                 
                 document.getElementById('noteTitle').value = currentNote.title;
-                document.getElementById('noteContent').innerHTML = currentNote.content;
+                document.getElementById('noteContent').innerHTML = currentNote.content || '';
                 document.getElementById('noteCategory').value = currentNote.category;
                 document.getElementById('noteTags').value = currentNote.tags.join(', ');
                 document.getElementById('noteDescription').value = currentNote.description;
@@ -315,6 +737,9 @@
         }
         
         function createNewCategory() {
+            const parentSelect = document.getElementById('parentCategoryInput');
+            parentSelect.innerHTML = '<option value="">No parent (root category)</option>' + 
+                categories.filter(cat => !cat.parent).map(cat => `<option value="${cat.name}">${cat.name}</option>`).join('');
             document.getElementById('categoryModal').style.display = 'flex';
             document.getElementById('categoryNameInput').focus();
         }
@@ -327,11 +752,12 @@
         
         function saveCategoryModal() {
             const categoryName = document.getElementById('categoryNameInput').value.trim();
+            const parentCategory = document.getElementById('parentCategoryInput').value || null;
             const color = document.getElementById('categoryColorInput').value;
             
             if (categoryName) {
                 if (!categories.find(cat => cat.name === categoryName)) {
-                    categories.push({ name: categoryName, color: color });
+                    categories.push({ name: categoryName, color: color, parent: parentCategory });
                     try {
                         fs.writeFileSync(categoriesFile, JSON.stringify(categories, null, 2));
                         updateCategorySelector();
@@ -355,6 +781,108 @@
         
         function closeManageCategoriesModal() {
             document.getElementById('manageCategoriesModal').style.display = 'none';
+        }
+        
+        function deleteCategory(categoryName) {
+            const noteCount = notes.filter(note => note.category === categoryName).length;
+            const childCategories = categories.filter(cat => cat.parent === categoryName);
+            const affectedNotes = notes.filter(note => note.category === categoryName);
+            
+            let messageHtml = `
+                <div class="delete-warning">
+                    <div class="warning-icon">⚠️</div>
+                    <div class="warning-text">
+                        <strong>Delete "${categoryName}" category?</strong>
+                        <p>This action cannot be undone.</p>
+                    </div>
+                </div>
+                
+                <div class="impact-details">
+            `;
+            
+            if (noteCount > 0) {
+                messageHtml += `
+                    <div class="impact-item notes-impact">
+                        <div class="impact-icon">📝</div>
+                        <div class="impact-content">
+                            <strong>${noteCount} note${noteCount > 1 ? 's' : ''} will be moved to "General"</strong>
+                            <div class="affected-notes">
+                                ${affectedNotes.slice(0, 3).map(note => `<span class="note-title">• ${note.title}</span>`).join('')}
+                                ${noteCount > 3 ? `<span class="more-notes">... and ${noteCount - 3} more</span>` : ''}
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+            
+            if (childCategories.length > 0) {
+                messageHtml += `
+                    <div class="impact-item subcategories-impact">
+                        <div class="impact-icon">📁</div>
+                        <div class="impact-content">
+                            <strong>${childCategories.length} subcategor${childCategories.length > 1 ? 'ies' : 'y'} will become root categor${childCategories.length > 1 ? 'ies' : 'y'}</strong>
+                            <div class="affected-categories">
+                                ${childCategories.map(cat => `<span class="category-name" style="color: ${cat.color}">• ${cat.name}</span>`).join('')}
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+            
+            if (noteCount === 0 && childCategories.length === 0) {
+                messageHtml += `
+                    <div class="impact-item safe-delete">
+                        <div class="impact-icon">✅</div>
+                        <div class="impact-content">
+                            <strong>Safe to delete</strong>
+                            <p>This category is empty and has no subcategories.</p>
+                        </div>
+                    </div>
+                `;
+            }
+            
+            messageHtml += '</div>';
+            
+            document.getElementById('deleteCategoryMessage').innerHTML = messageHtml;
+            document.getElementById('confirmDeleteBtn').onclick = () => confirmDeleteCategory(categoryName);
+            document.getElementById('deleteCategoryModal').style.display = 'flex';
+        }
+        
+        function confirmDeleteCategory(categoryName) {
+            notes.forEach(note => {
+                if (note.category === categoryName) {
+                    note.category = 'General';
+                    note.updatedAt = new Date().toISOString();
+                    try {
+                        const filePath = path.join(notesDir, note.id + '.json');
+                        fs.writeFileSync(filePath, JSON.stringify(note, null, 2));
+                    } catch (error) {
+                        console.error('Error updating note:', error);
+                    }
+                }
+            });
+            
+            categories.forEach(cat => {
+                if (cat.parent === categoryName) {
+                    cat.parent = null;
+                }
+            });
+            
+            categories = categories.filter(cat => cat.name !== categoryName);
+            try {
+                fs.writeFileSync(categoriesFile, JSON.stringify(categories, null, 2));
+                updateCategorySelector();
+                updateNotesList();
+                renderCategoriesList();
+                closeDeleteCategoryModal();
+                showAlert('✅ Success', 'Category deleted successfully.');
+            } catch (error) {
+                showAlert('❌ Error', 'Error deleting category: ' + error.message);
+            }
+        }
+        
+        function closeDeleteCategoryModal() {
+            document.getElementById('deleteCategoryModal').style.display = 'none';
         }
         
         function renderCategoriesList() {
@@ -416,6 +944,119 @@
             document.getElementById('noteCategory').value = '';
             document.getElementById('noteTags').value = '';
             document.getElementById('noteDescription').value = '';
+        }
+        
+        let blockCounter = 0;
+        
+        let selectedBlock = null;
+        let clickPosition = null;
+        
+        function createBlockAtClick(event) {
+            if (event.target.classList.contains('content-grid')) {
+                const grid = document.getElementById('noteContent');
+                const rect = grid.getBoundingClientRect();
+                clickPosition = {
+                    x: event.clientX - rect.left,
+                    y: event.clientY - rect.top
+                };
+                
+                if (selectedBlock) {
+                    selectedBlock.classList.remove('selected');
+                }
+                selectedBlock = null;
+            }
+        }
+        
+        function createBlockOnType() {
+            if (clickPosition && !selectedBlock) {
+                const grid = document.getElementById('noteContent');
+                const block = document.createElement('div');
+                block.className = 'note-block selected';
+                block.style.left = clickPosition.x + 'px';
+                block.style.top = clickPosition.y + 'px';
+                block.innerHTML = `<textarea oninput="autoResize(this); saveBlockContent(this)" onkeydown="handleBlockKeyDown(event)" onclick="selectBlock(this.parentElement); event.stopPropagation()"></textarea>`;
+                grid.appendChild(block);
+                makeDraggable(block);
+                selectedBlock = block;
+                clickPosition = null;
+                return block.querySelector('textarea');
+            }
+            return null;
+        }
+        
+        function autoResize(textarea) {
+            textarea.style.height = 'auto';
+            textarea.style.height = textarea.scrollHeight + 'px';
+            textarea.style.width = Math.max(100, textarea.value.length * 8 + 20) + 'px';
+        }
+        
+        function selectBlock(block) {
+            if (selectedBlock) {
+                selectedBlock.classList.remove('selected');
+            }
+            selectedBlock = block;
+            block.classList.add('selected');
+            block.querySelector('textarea').focus();
+        }
+        
+        function handleBlockKeyDown(event) {
+            if ((event.key === 'Delete' || event.key === 'Backspace') && event.target.value === '') {
+                if (selectedBlock) {
+                    selectedBlock.remove();
+                    selectedBlock = null;
+                }
+                event.preventDefault();
+            }
+        }
+        
+        function handleKeyDown(event) {
+            if (!selectedBlock && clickPosition) {
+                const textarea = createBlockOnType();
+                if (textarea) {
+                    textarea.value = event.key;
+                    autoResize(textarea);
+                    event.preventDefault();
+                }
+            }
+        }
+        
+        function deleteBlock(btn) {
+            btn.closest('.note-block').remove();
+        }
+        
+        function saveBlockContent(textarea) {
+            // Auto-save functionality can be added here
+        }
+        
+        function makeDraggable(element) {
+            let pos1 = 0, pos2 = 0, pos3 = 0, pos4 = 0;
+            element.onmousedown = dragMouseDown;
+            
+            function dragMouseDown(e) {
+                e = e || window.event;
+                if (e.target.tagName === 'TEXTAREA') return;
+                e.preventDefault();
+                pos3 = e.clientX;
+                pos4 = e.clientY;
+                document.onmouseup = closeDragElement;
+                document.onmousemove = elementDrag;
+            }
+            
+            function elementDrag(e) {
+                e = e || window.event;
+                e.preventDefault();
+                pos1 = pos3 - e.clientX;
+                pos2 = pos4 - e.clientY;
+                pos3 = e.clientX;
+                pos4 = e.clientY;
+                element.style.top = (element.offsetTop - pos2) + "px";
+                element.style.left = (element.offsetLeft - pos1) + "px";
+            }
+            
+            function closeDragElement() {
+                document.onmouseup = null;
+                document.onmousemove = null;
+            }
         }
         
         function saveCurrentNote() {
@@ -486,64 +1127,65 @@
             }
         }
         
-        const { shell } = require('electron');
+        const { ipcRenderer } = require('electron');
         
-        // Get current version from package.json
-        function getCurrentVersion() {
+        let currentVersion = 'Unknown';
+        let latestVersion = 'Unknown';
+        
+        // Get current version from main process
+        async function getCurrentVersion() {
             try {
-                // Try requiring package.json from app root
-                const packageData = require('./package.json');
-                return packageData.version;
+                currentVersion = await ipcRenderer.invoke('get-app-version');
+                return currentVersion;
             } catch (error) {
-                try {
-                    // Try reading from resources path
-                    const resourcesPath = path.join(process.resourcesPath, 'app', 'package.json');
-                    if (fs.existsSync(resourcesPath)) {
-                        const packageData = JSON.parse(fs.readFileSync(resourcesPath, 'utf8'));
-                        return packageData.version;
-                    }
-                } catch (e) {
-                    try {
-                        // Try reading from current working directory
-                        const packagePath = path.join(process.cwd(), 'package.json');
-                        if (fs.existsSync(packagePath)) {
-                            const packageData = JSON.parse(fs.readFileSync(packagePath, 'utf8'));
-                            return packageData.version;
-                        }
-                    } catch (e2) {
-                        try {
-                            // Try reading from __dirname
-                            const packagePath = path.join(__dirname, 'package.json');
-                            if (fs.existsSync(packagePath)) {
-                                const packageData = JSON.parse(fs.readFileSync(packagePath, 'utf8'));
-                                return packageData.version;
-                            }
-                        } catch (e3) {
-                            console.error('Could not find package.json in any location');
-                        }
-                    }
-                }
+                console.error('Error getting app version:', error);
+                return 'Unknown';
             }
-            return 'Unknown';
         }
         
+        // Setup IPC listeners for update events
+        ipcRenderer.on('update-checking', () => {
+            document.getElementById('updateBtn').textContent = 'Checking...';
+            document.getElementById('updateBtn').disabled = true;
+        });
+        
+        ipcRenderer.on('update-available', (event, version) => {
+            latestVersion = version;
+            document.getElementById('currentVersionText').textContent = currentVersion;
+            document.getElementById('latestVersionText').textContent = latestVersion;
+            document.getElementById('updateAvailableModal').style.display = 'flex';
+            document.getElementById('updateBtn').textContent = 'Check Updates';
+            document.getElementById('updateBtn').disabled = false;
+        });
+        
+        ipcRenderer.on('update-not-available', () => {
+            showAlert('✅ Up to Date', 'You have the latest version!');
+            document.getElementById('updateBtn').textContent = 'Check Updates';
+            document.getElementById('updateBtn').disabled = false;
+        });
+        
+        ipcRenderer.on('update-error', (event, error) => {
+            showAlert('❌ Error', 'Update error: ' + error);
+            document.getElementById('updateBtn').textContent = 'Check Updates';
+            document.getElementById('updateBtn').disabled = false;
+        });
+        
+        ipcRenderer.on('update-progress', (event, percent) => {
+            document.getElementById('updateProgress').style.display = 'block';
+            document.getElementById('progressFill').style.width = percent + '%';
+            document.getElementById('progressText').textContent = `Downloading... ${Math.round(percent)}%`;
+        });
+        
+        ipcRenderer.on('update-downloaded', () => {
+            document.getElementById('updateProgress').style.display = 'none';
+            document.getElementById('installUpdateBtn').textContent = 'Restart & Install';
+            document.getElementById('installUpdateBtn').disabled = false;
+            showAlert('✅ Download Complete', 'Update downloaded! Click "Restart & Install" to apply the update.');
+        });
+        
         async function checkForUpdates() {
-            try {
-                const response = await fetch('https://api.github.com/repos/SebastianOana/mindkeep-desktop/releases/latest');
-                const release = await response.json();
-                const latestVersion = release.tag_name.replace('v', '');
-                const currentVersion = getCurrentVersion();
-                
-                if (latestVersion !== currentVersion) {
-                    document.getElementById('currentVersionText').textContent = currentVersion;
-                    document.getElementById('latestVersionText').textContent = latestVersion;
-                    document.getElementById('updateAvailableModal').style.display = 'flex';
-                } else {
-                    showAlert('✅ Up to Date', 'You have the latest version!');
-                }
-            } catch (error) {
-                showAlert('❌ Error', 'Could not check for updates. Please check your internet connection.');
-            }
+            await getCurrentVersion();
+            await ipcRenderer.invoke('check-for-updates');
         }
         
         function closeUpdateAvailableModal() {
@@ -553,32 +1195,64 @@
         async function installUpdate() {
             const installBtn = document.getElementById('installUpdateBtn');
             installBtn.disabled = true;
-            installBtn.textContent = 'Opening Download...';
+            installBtn.textContent = 'Installing...';
             
-            try {
-                const response = await fetch('https://api.github.com/repos/SebastianOana/mindkeep-desktop/releases/latest');
-                const release = await response.json();
-                
-                const windowsAsset = release.assets.find(asset => 
-                    asset.name.endsWith('.exe') || asset.name.includes('Setup')
-                );
-                
-                if (windowsAsset) {
-                    shell.openExternal(windowsAsset.browser_download_url);
-                    closeUpdateAvailableModal();
-                    showAlert('✅ Download Started', 'The installer download has started. Please run it when complete to update.');
-                } else {
-                    throw new Error('No Windows installer found');
-                }
-            } catch (error) {
-                installBtn.disabled = false;
-                installBtn.textContent = 'Install Update';
-                showAlert('❌ Error', 'Failed to download update: ' + error.message);
-            }
+            await ipcRenderer.invoke('install-update');
         }
         
         // Initialize when page loads
         document.addEventListener('DOMContentLoaded', initApp);
+        
+        // Add search functionality
+        document.getElementById('searchInput').addEventListener('input', updateNotesList);
+        
+        // Rich text formatting functions
+        function formatText(command) {
+            document.execCommand(command, false, null);
+            document.getElementById('noteContent').focus();
+        }
+        
+        function formatHeading(tag) {
+            document.execCommand('formatBlock', false, tag);
+            document.getElementById('noteContent').focus();
+        }
+        
+        function formatCode() {
+            const selection = window.getSelection();
+            if (selection.toString()) {
+                document.execCommand('insertHTML', false, `<code>${selection.toString()}</code>`);
+            } else {
+                document.execCommand('insertHTML', false, '<code></code>');
+            }
+            document.getElementById('noteContent').focus();
+        }
+        
+        function highlightText() {
+            document.execCommand('hiliteColor', false, '#ffff00');
+            document.getElementById('noteContent').focus();
+        }
+        
+        function alignText(alignment) {
+            document.execCommand('justify' + alignment.charAt(0).toUpperCase() + alignment.slice(1), false, null);
+            document.getElementById('noteContent').focus();
+        }
+        
+        function undoRedo(action) {
+            document.execCommand(action, false, null);
+            document.getElementById('noteContent').focus();
+        }
+        
+
+        
+        // Add Ctrl+S save functionality
+        document.addEventListener('keydown', function(e) {
+            if (e.ctrlKey && e.key === 's') {
+                e.preventDefault();
+                if (document.getElementById('editor').style.display !== 'none') {
+                    saveCurrentNote();
+                }
+            }
+        });
     </script>
 </body>
 </html>
