@@ -18,26 +18,27 @@
         <div class="app-body">
             <div class="sidebar">
                 <div class="sidebar-header">
-                    <select id="categorySelector" class="category-selector">
-                        <option value="all">All Notes</option>
-                    </select>
-                    <div class="category-actions">
-                        <button class="category-btn" onclick="createNewCategory()">
-                            <span class="btn-icon">🎨</span>
-                            <span class="btn-text">Category</span>
-                        </button>
-                        <button class="category-btn" onclick="manageCategories()">
-                            <span class="btn-icon">⚙️</span>
-                            <span class="btn-text">Manage</span>
-                        </button>
+                    <div class="categories-tree" id="categoriesTree">
+                        <div class="category-item root-category active" onclick="selectCategory('all')">
+                            <span class="category-icon">📁</span>
+                            <span class="category-name">All Notes</span>
+                            <span class="note-count">0</span>
+                        </div>
                     </div>
-                    <div class="sort-controls">
+                    <div class="sidebar-controls">
+                        <div class="category-actions">
+                            <button class="category-btn" onclick="createNewCategory()" title="Create Category">
+                                <span class="btn-icon">📁</span>
+                            </button>
+                            <button class="category-btn" onclick="manageCategories()" title="Manage Categories">
+                                <span class="btn-icon">⚙️</span>
+                            </button>
+                        </div>
                         <select id="sortSelector" class="sort-selector" onchange="changeSorting()">
-                            <option value="updated_at DESC">Recently Modified</option>
-                            <option value="created_at DESC">Recently Created</option>
-                            <option value="title ASC">Title A-Z</option>
-                            <option value="title DESC">Title Z-A</option>
-                            <option value="category ASC">Category</option>
+                            <option value="updated_at DESC">Recent</option>
+                            <option value="created_at DESC">Created</option>
+                            <option value="title ASC">A-Z</option>
+                            <option value="title DESC">Z-A</option>
                         </select>
                     </div>
                     <div class="bulk-actions" id="bulkActions" style="display: none;" data-selected-count="0">
@@ -61,40 +62,36 @@
                         </div>
                     </div>
                     <div class="note-actions">
-                        <button class="new-note-btn" onclick="createNewNote()">
-                            <span class="btn-icon">✏️</span>
-                            <span class="btn-text">New Note</span>
+                        <button class="new-note-btn" onclick="createNewNote()" style="display: flex;">
+                            <span class="btn-icon">+</span>
+                            <span class="btn-text">New</span>
+                        </button>
+                        <button class="template-btn" onclick="showTemplateModal()" style="display: flex;">
+                            <span class="btn-icon">📋</span>
+                            <span class="btn-text">Template</span>
                         </button>
                         <button class="bulk-toggle-btn" onclick="toggleBulkMode()">
                             <span class="btn-icon">☑️</span>
-                            <span class="btn-text">Select Multiple</span>
+                            <span class="btn-text">Select</span>
                         </button>
                     </div>
                 </div>
                 <div id="notesList" class="notes-list">
                     <div class="no-notes-message">No notes found</div>
                 </div>
-                <div id="notePreview" class="note-preview" style="display: none;">
-                    <h4 id="previewTitle"></h4>
-                    <p id="previewContent"></p>
-                </div>
+
             </div>
             
             <div class="main-content">
                 <div id="welcomeScreen" class="welcome">
                     <h2>Welcome to MindKeep</h2>
                     <p>Your offline knowledge vault</p>
-                    <button class="new-note-btn" onclick="createNewNote()">Create First Note</button>
                 </div>
                 
                 <div id="viewer" class="viewer" style="display: none;">
                     <div class="viewer-header">
                         <h1 id="viewerTitle"></h1>
                         <div class="viewer-actions">
-                            <button onclick="openInNoteSearch()" class="search-btn">
-                                <span class="btn-icon">🔍</span>
-                                <span class="btn-text">Search</span>
-                            </button>
                             <button onclick="editNote()" class="edit-btn">
                                 <span class="btn-icon">✏️</span>
                                 <span class="btn-text">Edit</span>
@@ -118,10 +115,6 @@
                     <div class="editor-header">
                         <input type="text" id="noteTitle" class="title-input" placeholder="Note title...">
                         <div class="editor-actions">
-                            <button onclick="openInNoteSearch()" class="search-btn">
-                                <span class="btn-icon">🔍</span>
-                                <span class="btn-text">Search</span>
-                            </button>
                             <button onclick="saveCurrentNote()" class="save-btn">Save</button>
                             <button onclick="cancelEdit()" class="cancel-btn">Cancel</button>
                         </div>
@@ -301,6 +294,62 @@
         </div>
     </div>
     
+    <!-- Template Modal -->
+    <div id="templateModal" class="modal" style="display: none;">
+        <div class="modal-content template-modal">
+            <h3>📋 Templates</h3>
+            <div class="template-list" id="templateList">
+                <div class="template-item" onclick="createFromTemplate('meeting')">
+                    <span class="template-icon">💼</span>
+                    <span class="template-name">Meeting Notes</span>
+                </div>
+                <div class="template-item" onclick="createFromTemplate('daily')">
+                    <span class="template-icon">📅</span>
+                    <span class="template-name">Daily Journal</span>
+                </div>
+                <div class="template-item" onclick="createFromTemplate('project')">
+                    <span class="template-icon">📁</span>
+                    <span class="template-name">Project Plan</span>
+                </div>
+                <div class="template-item" onclick="createFromTemplate('todo')">
+                    <span class="template-icon">✅</span>
+                    <span class="template-name">To-Do List</span>
+                </div>
+                <div class="template-item" onclick="createFromTemplate('research')">
+                    <span class="template-icon">🔍</span>
+                    <span class="template-name">Research Notes</span>
+                </div>
+                <div class="template-item" onclick="createFromTemplate('blank')">
+                    <span class="template-icon">📄</span>
+                    <span class="template-name">Blank Note</span>
+                </div>
+            </div>
+            <div class="modal-buttons">
+                <button onclick="showAddTemplateForm()" class="modal-btn save">+ Add Template</button>
+                <button onclick="closeTemplateModal()" class="modal-btn cancel">Cancel</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Add Template Modal -->
+    <div id="addTemplateModal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <h3>➕ Create Template</h3>
+            <input type="text" id="templateNameInput" placeholder="Template name" class="modal-input">
+            <input type="text" id="templateIconInput" placeholder="Icon (emoji)" class="modal-input" maxlength="2">
+            <input type="text" id="templateTitleInput" placeholder="Note title template" class="modal-input">
+            <textarea id="templateContentInput" placeholder="Template content..." class="modal-textarea"></textarea>
+            <div class="modal-buttons">
+                <button onclick="saveTemplate()" class="modal-btn save">Save Template</button>
+                <button onclick="closeAddTemplateModal()" class="modal-btn cancel">Cancel</button>
+            </div>
+        </div>
+    </div>
+    
+
+    
+
+    
     <script>
         const { ipcRenderer } = require('electron');
         
@@ -338,8 +387,10 @@
         let bulkMode = false;
         let selectedNotes = new Set();
         
+        let expandedCategories = new Set();
+        
         function updateCategorySelector() {
-            const selector = document.getElementById('categorySelector');
+            const tree = document.getElementById('categoriesTree');
             const noteCategory = document.getElementById('noteCategory');
             
             const buildCategoryOptions = (cats) => {
@@ -357,38 +408,77 @@
                 return options;
             };
             
-            const options = '<option value="all">All Notes</option>' + buildCategoryOptions(categories);
-            selector.innerHTML = options;
-            selector.value = currentCategory;
+            // Build tree structure
+            const allNotesCount = notes.length;
+            const rootCats = categories.filter(cat => !cat.parent);
             
-            selector.onchange = function() {
-                currentCategory = this.value;
-                updateNotesList();
-            };
+            let treeHtml = `
+                <div class="category-item root-category ${currentCategory === 'all' ? 'active' : ''}" onclick="selectCategory('all')">
+                    <span class="category-icon">📁</span>
+                    <span class="category-name">All Notes</span>
+                    <span class="note-count">${allNotesCount}</span>
+                </div>
+            `;
+            
+            rootCats.forEach(cat => {
+                const noteCount = notes.filter(note => note.category === cat.name).length;
+                const children = categories.filter(c => c.parent === cat.name);
+                const hasChildren = children.length > 0;
+                const isExpanded = expandedCategories.has(cat.name);
+                
+                treeHtml += `
+                    <div class="category-item ${currentCategory === cat.name ? 'active' : ''}" 
+                         ondragover="handleCategoryDragOver(event)" 
+                         ondragleave="handleCategoryDragLeave(event)" 
+                         ondrop="handleCategoryDrop(event, '${cat.name}')">
+                        ${hasChildren ? `<span class="expand-arrow ${isExpanded ? 'expanded' : ''}" onclick="toggleCategory('${cat.name}'); event.stopPropagation();">▶</span>` : '<span class="expand-spacer"></span>'}
+                        <span class="category-icon" style="color: ${cat.color}" onclick="selectCategory('${cat.name}')">📁</span>
+                        <span class="category-name" onclick="selectCategory('${cat.name}')">${cat.name}</span>
+                        <span class="note-count" onclick="selectCategory('${cat.name}')">${noteCount}</span>
+                    </div>
+                `;
+                
+                if (hasChildren && isExpanded) {
+                    children.forEach(child => {
+                        const childNoteCount = notes.filter(note => note.category === child.name).length;
+                        treeHtml += `
+                            <div class="category-item subcategory ${currentCategory === child.name ? 'active' : ''}" 
+                                 onclick="selectCategory('${child.name}')"
+                                 ondragover="handleCategoryDragOver(event)" 
+                                 ondragleave="handleCategoryDragLeave(event)" 
+                                 ondrop="handleCategoryDrop(event, '${child.name}')">
+                                <span class="expand-spacer"></span>
+                                <span class="category-icon" style="color: ${child.color}">📄</span>
+                                <span class="category-name">${child.name}</span>
+                                <span class="note-count">${childNoteCount}</span>
+                            </div>
+                        `;
+                    });
+                }
+            });
+            
+            tree.innerHTML = treeHtml;
             
             const noteOptions = '<option value="">Select Category</option>' + buildCategoryOptions(categories);
             noteCategory.innerHTML = noteOptions;
         }
         
-        function showPreview(event, noteId) {
-            const note = notes.find(n => n.id === noteId);
-            if (!note) return;
-            
-            const preview = document.getElementById('notePreview');
-            const title = document.getElementById('previewTitle');
-            const content = document.getElementById('previewContent');
-            
-            title.textContent = note.title;
-            content.textContent = note.content ? note.content.replace(/<[^>]*>/g, '').substring(0, 150) + '...' : 'No content';
-            
-            preview.style.display = 'block';
-            preview.style.left = event.pageX + 10 + 'px';
-            preview.style.top = event.pageY + 10 + 'px';
+        function toggleCategory(categoryName) {
+            if (expandedCategories.has(categoryName)) {
+                expandedCategories.delete(categoryName);
+            } else {
+                expandedCategories.add(categoryName);
+            }
+            updateCategorySelector();
         }
         
-        function hidePreview() {
-            document.getElementById('notePreview').style.display = 'none';
+        function selectCategory(categoryName) {
+            currentCategory = categoryName;
+            updateCategorySelector();
+            updateNotesList();
         }
+        
+
         
         function updateNotesList() {
             const notesList = document.getElementById('notesList');
@@ -419,12 +509,18 @@
                 const pinIcon = note.isPinned ? '📌' : '';
                 
                 return `
-                    <div class="note-item ${isSelected ? 'selected' : ''} ${note.isPinned ? 'pinned' : ''}" style="border-left: 4px solid ${category.color}; padding: 1rem; margin-bottom: 0.5rem; background: ${isSelected ? '#555' : '#404040'}; border-radius: 4px; cursor: pointer; display: flex; align-items: center; gap: 10px;" onclick="${bulkMode ? `toggleNoteSelection('${note.id}')` : `viewNote('${note.id}')`}" onmouseenter="showPreview(event, '${note.id}')" onmouseleave="hidePreview()">
+                    <div class="note-item ${isSelected ? 'selected' : ''} ${note.isPinned ? 'pinned' : ''}" 
+                         style="border-left: 4px solid ${category.color}; padding: 1rem; margin-bottom: 0.5rem; background: ${isSelected ? '#555' : '#404040'}; border-radius: 4px; cursor: pointer; display: flex; align-items: center; gap: 10px;" 
+                         draggable="true" 
+                         data-note-id="${note.id}"
+                         ondragstart="handleNoteDragStart(event)"
+                         ondragend="handleNoteDragEnd(event)"
+                         onclick="${bulkMode ? `toggleNoteSelection('${note.id}')` : `viewNote('${note.id}')`}">
                         ${checkboxHtml}
                         <div style="flex: 1;">
                             <div style="font-weight: bold; color: #e0e0e0; display: flex; align-items: center; gap: 0.5rem;">
                                 ${pinIcon}
-                                <span>${highlightSearchTerm(processNoteLinks(note.title))}</span>
+                                <span>${highlightSearchTerm(note.title)}</span>
                             </div>
                             <div style="color: #888; font-size: 0.9rem; margin-top: 0.5rem;">${new Date(note.updatedAt).toLocaleDateString()}</div>
                         </div>
@@ -434,14 +530,21 @@
             }).join('');
         }
         
-        // Process note links [[Note Name]]
+        // Process note links @NoteName
         function processNoteLinks(text) {
-            return text.replace(/\[\[([^\]]+)\]\]/g, (match, noteName) => {
-                const linkedNote = notes.find(note => note.title.toLowerCase() === noteName.toLowerCase());
+            if (!text) return text;
+            
+            return text.replace(/@([A-Za-z0-9\s\-_]+)/g, (match, noteName) => {
+                const trimmedName = noteName.trim();
+                const linkedNote = notes.find(note => 
+                    note.title.toLowerCase().trim() === trimmedName.toLowerCase().trim()
+                );
+                
                 if (linkedNote) {
-                    return `<span class="note-link" onclick="viewNote('${linkedNote.id}'); event.stopPropagation();" style="color: #4a9eff; cursor: pointer; text-decoration: underline;">${noteName}</span>`;
+                    return `<span class="note-link" data-note-id="${linkedNote.id}" style="color: #4a9eff !important; cursor: pointer; text-decoration: underline; font-weight: bold; background: rgba(74, 158, 255, 0.1); padding: 0.1rem 0.2rem; border-radius: 3px;">@${trimmedName}</span>`;
+                } else {
+                    return `<span style="color: #888;">@${trimmedName}</span>`;
                 }
-                return `<span style="color: #888;">${noteName}</span>`;
             });
         }
         
@@ -453,13 +556,19 @@
             const toggleBtn = document.querySelector('.bulk-toggle-btn');
             const toggleIcon = toggleBtn.querySelector('.btn-icon');
             const toggleText = toggleBtn.querySelector('.btn-text');
+            const newNoteBtn = document.querySelector('.new-note-btn');
+            const templateBtn = document.querySelector('.template-btn');
             
             bulkActions.style.display = bulkMode ? 'flex' : 'none';
             
             if (bulkMode) {
                 toggleBtn.style.display = 'none';
+                newNoteBtn.style.display = 'none';
+                templateBtn.style.display = 'none';
             } else {
                 toggleBtn.style.display = 'flex';
+                newNoteBtn.style.display = 'flex';
+                templateBtn.style.display = 'flex';
                 toggleIcon.textContent = '☑️';
                 toggleText.textContent = 'Select Multiple';
                 toggleBtn.style.background = 'linear-gradient(135deg, #6c757d, #5a6268)';
@@ -717,7 +826,13 @@
                     <span>Updated: ${new Date(currentNote.updatedAt).toLocaleDateString()}</span>
                     ${currentNote.description ? `<br><span style="color: #4a9eff; font-style: italic;">📝 ${currentNote.description}</span>` : ''}
                 `;
-                document.getElementById('viewerContent').innerHTML = processNoteLinks(currentNote.content) || '<em>No content</em>';
+                
+                // Process note links and set content
+                const processedContent = processNoteLinks(currentNote.content || '');
+                document.getElementById('viewerContent').innerHTML = processedContent || '<em>No content</em>';
+                
+                // Store original content for search functionality
+                originalContent = document.getElementById('viewerContent').innerHTML;
             }
         }
         
@@ -779,14 +894,23 @@
         }
         
         // Modal functions
-        function showAlert(title, message) {
+        function showAlert(title, message, callback) {
             document.getElementById('alertTitle').textContent = title;
             document.getElementById('alertMessage').textContent = message;
             document.getElementById('alertModal').style.display = 'flex';
+            
+            // Store callback for when OK is clicked
+            window.alertCallback = callback;
         }
         
         function closeAlert() {
             document.getElementById('alertModal').style.display = 'none';
+            
+            // Execute callback if provided
+            if (window.alertCallback) {
+                window.alertCallback();
+                window.alertCallback = null;
+            }
         }
         
         // Enhanced confirmation modal
@@ -853,6 +977,8 @@
         }
         
         function deleteCategory(categoryName) {
+            closeManageCategoriesModal();
+            
             const noteCount = notes.filter(note => note.category === categoryName).length;
             const childCategories = categories.filter(cat => cat.parent === categoryName);
             const affectedNotes = notes.filter(note => note.category === categoryName);
@@ -926,7 +1052,9 @@
                 updateNotesList();
                 renderCategoriesList();
                 closeDeleteCategoryModal();
-                showAlert('✅ Success', 'Category deleted successfully.');
+                showAlert('✅ Success', 'Category deleted successfully.', () => {
+                    document.getElementById('manageCategoriesModal').style.display = 'flex';
+                });
             } catch (error) {
                 showAlert('❌ Error', 'Error deleting category: ' + error.message);
             }
@@ -948,7 +1076,10 @@
                             <span style="color: #888;">(${cat.color}) - ${noteCount} notes</span>
                         </div>
                         ${cat.name !== 'General' ? 
-                            `<button class="category-delete" onclick="deleteCategory('${cat.name}')">Delete</button>` : 
+                            `<button class="category-delete" onclick="deleteCategory('${cat.name}')">
+                                <span>🗑️</span>
+                                <span>Delete</span>
+                            </button>` : 
                             '<span style="color: #888;">Default</span>'
                         }
                     </div>
@@ -956,50 +1087,194 @@
             }).join('');
         }
         
-        function deleteCategory(categoryName) {
-            if (confirm('Delete category "' + categoryName + '"? Notes will be moved to General.')) {
-                // Move notes to General
-                notes.forEach(note => {
-                    if (note.category === categoryName) {
-                        note.category = 'General';
-                        try {
-                            const filePath = path.join(notesDir, note.id + '.json');
-                            fs.writeFileSync(filePath, JSON.stringify(note, null, 2));
-                        } catch (error) {
-                            console.error('Error updating note:', error);
-                        }
-                    }
-                });
-                
-                // Remove category
-                categories = categories.filter(cat => cat.name !== categoryName);
-                try {
-                    fs.writeFileSync(categoriesFile, JSON.stringify(categories, null, 2));
-                    updateCategorySelector();
-                    updateNotesList();
-                    renderCategoriesList();
-                    showAlert('✅ Success', 'Category deleted and notes moved to General.');
-                } catch (error) {
-                    showAlert('❌ Error', 'Error deleting category: ' + error.message);
-                }
+
+        
+        const templates = {
+            meeting: {
+                title: 'Meeting Notes - {date}',
+                content: `<h2>Meeting: [Topic]</h2>
+<p><strong>Date:</strong> {date}</p>
+<p><strong>Attendees:</strong></p>
+<ul><li></li></ul>
+
+<h3>Agenda</h3>
+<ul><li></li></ul>
+
+<h3>Discussion Points</h3>
+<ul><li></li></ul>
+
+<h3>Action Items</h3>
+<ul><li>[ ] </li></ul>
+
+<h3>Next Steps</h3>
+<p></p>`,
+                tags: ['meeting', 'work']
+            },
+            daily: {
+                title: 'Daily Journal - {date}',
+                content: `<h2>{date}</h2>
+
+<h3>Today's Goals</h3>
+<ul><li>[ ] </li></ul>
+
+<h3>What Happened</h3>
+<p></p>
+
+<h3>Thoughts & Reflections</h3>
+<p></p>
+
+<h3>Tomorrow's Focus</h3>
+<ul><li></li></ul>`,
+                tags: ['journal', 'daily']
+            },
+            project: {
+                title: 'Project: [Name]',
+                content: `<h2>Project Overview</h2>
+<p><strong>Start Date:</strong> {date}</p>
+<p><strong>Deadline:</strong></p>
+<p><strong>Status:</strong> Planning</p>
+
+<h3>Objectives</h3>
+<ul><li></li></ul>
+
+<h3>Requirements</h3>
+<ul><li></li></ul>
+
+<h3>Tasks</h3>
+<ul><li>[ ] </li></ul>
+
+<h3>Resources</h3>
+<ul><li></li></ul>
+
+<h3>Notes</h3>
+<p></p>`,
+                tags: ['project', 'planning']
+            },
+            todo: {
+                title: 'To-Do List - {date}',
+                content: `<h2>Tasks for {date}</h2>
+
+<h3>High Priority</h3>
+<ul><li>[ ] </li></ul>
+
+<h3>Medium Priority</h3>
+<ul><li>[ ] </li></ul>
+
+<h3>Low Priority</h3>
+<ul><li>[ ] </li></ul>
+
+<h3>Completed</h3>
+<ul><li>[x] </li></ul>`,
+                tags: ['todo', 'tasks']
+            },
+            research: {
+                title: 'Research: [Topic]',
+                content: `<h2>Research Topic</h2>
+<p><strong>Date:</strong> {date}</p>
+<p><strong>Purpose:</strong></p>
+
+<h3>Key Questions</h3>
+<ul><li></li></ul>
+
+<h3>Sources</h3>
+<ul><li></li></ul>
+
+<h3>Findings</h3>
+<p></p>
+
+<h3>Conclusions</h3>
+<p></p>
+
+<h3>Next Steps</h3>
+<ul><li></li></ul>`,
+                tags: ['research', 'study']
+            },
+            blank: {
+                title: '',
+                content: '',
+                tags: []
             }
+        };
+        
+        function showTemplateModal() {
+            document.getElementById('templateModal').style.display = 'flex';
         }
         
-        function createNewNote() {
+        function closeTemplateModal() {
+            document.getElementById('templateModal').style.display = 'none';
+        }
+        
+        function showAddTemplateForm() {
+            document.getElementById('templateModal').style.display = 'none';
+            document.getElementById('addTemplateModal').style.display = 'flex';
+            document.getElementById('templateNameInput').focus();
+        }
+        
+        function closeAddTemplateModal() {
+            document.getElementById('addTemplateModal').style.display = 'none';
+            document.getElementById('templateNameInput').value = '';
+            document.getElementById('templateIconInput').value = '';
+            document.getElementById('templateTitleInput').value = '';
+            document.getElementById('templateContentInput').value = '';
+        }
+        
+        function saveTemplate() {
+            const name = document.getElementById('templateNameInput').value.trim();
+            const icon = document.getElementById('templateIconInput').value.trim() || '📄';
+            const title = document.getElementById('templateTitleInput').value.trim();
+            const content = document.getElementById('templateContentInput').value.trim();
+            
+            if (!name) {
+                showAlert('⚠️ Warning', 'Please enter a template name.');
+                return;
+            }
+            
+            const templateKey = name.toLowerCase().replace(/\s+/g, '_');
+            templates[templateKey] = {
+                title: title || name,
+                content: content,
+                tags: []
+            };
+            
+            // Add to template list
+            const templateList = document.getElementById('templateList');
+            const newTemplate = document.createElement('div');
+            newTemplate.className = 'template-item';
+            newTemplate.onclick = () => createFromTemplate(templateKey);
+            newTemplate.innerHTML = `
+                <span class="template-icon">${icon}</span>
+                <span class="template-name">${name}</span>
+            `;
+            templateList.appendChild(newTemplate);
+            
+            closeAddTemplateModal();
+            showAlert('✅ Success', 'Template "' + name + '" created!');
+        }
+        
+        function createFromTemplate(templateType) {
+            const template = templates[templateType];
+            const today = new Date().toLocaleDateString();
+            
             currentNote = null;
             document.getElementById('welcomeScreen').style.display = 'none';
             document.getElementById('viewer').style.display = 'none';
             document.getElementById('editor').style.display = 'flex';
-            document.getElementById('noteTitle').value = '';
-            document.getElementById('noteContent').innerHTML = '';
+            
+            document.getElementById('noteTitle').value = template.title.replace('{date}', today);
+            document.getElementById('noteContent').innerHTML = template.content.replace(/{date}/g, today);
             document.getElementById('noteCategory').value = '';
-            document.getElementById('noteTags').value = '';
+            document.getElementById('noteTags').value = template.tags.join(', ');
             document.getElementById('noteDescription').value = '';
             
-            // Focus the content editor
+            closeTemplateModal();
+            
             setTimeout(() => {
                 document.getElementById('noteContent').focus();
             }, 100);
+        }
+        
+        function createNewNote() {
+            createFromTemplate('blank');
         }
         
         let blockCounter = 0;
@@ -1158,8 +1433,11 @@
                 document.getElementById('editor').style.display = 'none';
                 document.getElementById('viewer').style.display = 'flex';
                 
-                // Update viewer
+                // Update viewer with processed links
                 viewNote(note.id);
+                
+                // Also update the notes list to refresh any links there
+                updateNotesList();
                 
                 showAlert('✅ Success', 'Note "' + title + '" saved!');
             } catch (error) {
@@ -1247,10 +1525,14 @@
             await ipcRenderer.invoke('install-update');
         }
         
+
+        
         // Initialize when page loads
         document.addEventListener('DOMContentLoaded', function() {
             initApp();
             initSearchListeners();
+            setupNoteLinking();
+            setupNoteLinkClicks();
         });
         
         // Listen for global shortcuts
@@ -1515,6 +1797,12 @@
                 }
             }
             
+            // Ctrl+R - Refresh/reload data
+            if (e.ctrlKey && e.key === 'r') {
+                e.preventDefault();
+                location.reload();
+            }
+            
             // Escape - Close floating search
             if (e.key === 'Escape') {
                 if (document.getElementById('floatingSearch').style.display !== 'none') {
@@ -1522,6 +1810,8 @@
                 }
             }
         });
+        
+
         
         // Initialize floating search listener
         function initSearchListeners() {
@@ -1541,6 +1831,197 @@
                     }
                 });
             }
+        }
+        
+        // Drag and drop functions
+        let draggedNoteId = null;
+        
+        function handleNoteDragStart(event) {
+            draggedNoteId = event.target.dataset.noteId;
+            event.target.classList.add('dragging');
+        }
+        
+        function handleNoteDragEnd(event) {
+            event.target.classList.remove('dragging');
+            draggedNoteId = null;
+        }
+        
+        function handleCategoryDragOver(event) {
+            event.preventDefault();
+            event.currentTarget.classList.add('drag-over');
+        }
+        
+        function handleCategoryDragLeave(event) {
+            event.currentTarget.classList.remove('drag-over');
+        }
+        
+        async function handleCategoryDrop(event, categoryName) {
+            event.preventDefault();
+            event.currentTarget.classList.remove('drag-over');
+            
+            if (draggedNoteId && categoryName) {
+                const note = notes.find(n => n.id === draggedNoteId);
+                if (note && note.category !== categoryName) {
+                    note.category = categoryName;
+                    note.updatedAt = new Date().toISOString();
+                    
+                    try {
+                        await ipcRenderer.invoke('db-save-note', note);
+                        notes = await ipcRenderer.invoke('db-get-notes');
+                        updateNotesList();
+                        updateCategorySelector();
+                        showAlert('✅ Success', `Note moved to ${categoryName}`);
+                    } catch (error) {
+                        showAlert('❌ Error', 'Error moving note: ' + error.message);
+                    }
+                }
+            }
+        }
+        
+        // Note linking improvements
+        let linkSuggestionDiv = null;
+        let selectedSuggestionIndex = -1;
+        let currentSuggestions = [];
+        
+        function setupNoteLinking() {
+            const noteContent = document.getElementById('noteContent');
+            if (noteContent) {
+                noteContent.addEventListener('input', handleNoteLinkInput);
+                noteContent.addEventListener('keydown', function(e) {
+                    if (linkSuggestionDiv && linkSuggestionDiv.style.display === 'block') {
+                        if (e.key === 'ArrowDown') {
+                            e.preventDefault();
+                            selectedSuggestionIndex = (selectedSuggestionIndex + 1) % currentSuggestions.length;
+                            updateSuggestionSelection();
+                        } else if (e.key === 'ArrowUp') {
+                            e.preventDefault();
+                            selectedSuggestionIndex = selectedSuggestionIndex <= 0 ? currentSuggestions.length - 1 : selectedSuggestionIndex - 1;
+                            updateSuggestionSelection();
+                        } else if ((e.key === 'Enter' || e.key === 'Tab') && selectedSuggestionIndex >= 0) {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            insertNoteLink(currentSuggestions[selectedSuggestionIndex].title);
+                        } else if (e.key === 'Escape') {
+                            e.preventDefault();
+                            hideLinkSuggestions();
+                        }
+                    }
+                });
+            }
+        }
+        
+        function handleNoteLinkInput(event) {
+            const selection = window.getSelection();
+            if (selection.rangeCount === 0) return;
+            
+            const range = selection.getRangeAt(0);
+            const textContent = range.startContainer.textContent || '';
+            const cursorPos = range.startOffset;
+            
+            const beforeCursor = textContent.substring(0, cursorPos);
+            const linkMatch = beforeCursor.match(/@([\w\s-]*)$/);
+            
+            if (linkMatch) {
+                const searchTerm = linkMatch[1].toLowerCase();
+                showLinkSuggestions(searchTerm, range);
+            } else {
+                hideLinkSuggestions();
+            }
+        }
+        
+        function showLinkSuggestions(searchTerm, range) {
+            currentSuggestions = notes.filter(note => 
+                (searchTerm === '' || note.title.toLowerCase().includes(searchTerm)) && 
+                (!currentNote || note.id !== currentNote.id)
+            ).slice(0, 8);
+            
+            if (currentSuggestions.length === 0) {
+                hideLinkSuggestions();
+                return;
+            }
+            
+            selectedSuggestionIndex = 0;
+            
+            if (!linkSuggestionDiv) {
+                linkSuggestionDiv = document.createElement('div');
+                linkSuggestionDiv.className = 'link-suggestion';
+                document.body.appendChild(linkSuggestionDiv);
+            }
+            
+            const rect = range.getBoundingClientRect();
+            linkSuggestionDiv.style.left = rect.left + 'px';
+            linkSuggestionDiv.style.top = (rect.bottom + 5) + 'px';
+            linkSuggestionDiv.style.display = 'block';
+            
+            updateSuggestionSelection();
+        }
+        
+        function updateSuggestionSelection() {
+            linkSuggestionDiv.innerHTML = currentSuggestions.map((note, index) => {
+                const category = categories.find(cat => cat.name === note.category) || { color: '#4a9eff' };
+                return `<div class="link-suggestion-item ${index === selectedSuggestionIndex ? 'selected' : ''}" onclick="event.stopPropagation(); insertNoteLink('${note.title.replace(/'/g, "\\'")}')"; return false;">
+                    <div class="suggestion-title">${note.title}</div>
+                    <div class="suggestion-meta" style="color: ${category.color}">${note.category}</div>
+                </div>`;
+            }).join('');
+        }
+        
+        function hideLinkSuggestions() {
+            if (linkSuggestionDiv) {
+                linkSuggestionDiv.style.display = 'none';
+            }
+            selectedSuggestionIndex = -1;
+            currentSuggestions = [];
+        }
+        
+        function insertNoteLink(noteTitle) {
+            const editor = document.getElementById('noteContent');
+            const selection = window.getSelection();
+            
+            if (selection.rangeCount === 0) {
+                hideLinkSuggestions();
+                return;
+            }
+            
+            const range = selection.getRangeAt(0);
+            const textNode = range.startContainer;
+            const cursorPos = range.startOffset;
+            
+            if (textNode.nodeType === Node.TEXT_NODE) {
+                const text = textNode.textContent;
+                const beforeCursor = text.substring(0, cursorPos);
+                const linkMatch = beforeCursor.match(/@([\w\s-]*)$/);
+                
+                if (linkMatch) {
+                    const startPos = cursorPos - linkMatch[0].length;
+                    const beforeLink = text.substring(0, startPos);
+                    const afterCursor = text.substring(cursorPos);
+                    
+                    textNode.textContent = beforeLink + `@${noteTitle} ` + afterCursor;
+                    
+                    // Set cursor after the inserted link
+                    const newPos = startPos + `@${noteTitle} `.length;
+                    range.setStart(textNode, newPos);
+                    range.setEnd(textNode, newPos);
+                    selection.removeAllRanges();
+                    selection.addRange(range);
+                }
+            }
+            
+            hideLinkSuggestions();
+            editor.focus();
+        }
+        
+        // Setup click handlers for note links
+        function setupNoteLinkClicks() {
+            document.addEventListener('click', function(event) {
+                if (event.target.classList.contains('note-link') && event.target.getAttribute('data-note-id')) {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    const noteId = event.target.getAttribute('data-note-id');
+                    viewNote(noteId);
+                }
+            });
         }
     </script>
 </body>

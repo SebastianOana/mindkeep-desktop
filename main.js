@@ -21,6 +21,8 @@ function createWindow() {
     mainWindow = new BrowserWindow({
         width: 1200,
         height: 800,
+        minWidth: 800,
+        minHeight: 600,
         webPreferences: {
             nodeIntegration: true,
             contextIsolation: false
@@ -92,7 +94,15 @@ ipcMain.handle('db-delete-category', (event, name) => {
     return 1;
 });
 
-ipcMain.handle('db-get-notes', () => notesCache);
+ipcMain.handle('db-get-notes', () => {
+    return [...notesCache].sort((a, b) => {
+        // Pinned notes always come first
+        if (a.isPinned && !b.isPinned) return -1;
+        if (!a.isPinned && b.isPinned) return 1;
+        // Then sort by updated date
+        return new Date(b.updatedAt) - new Date(a.updatedAt);
+    });
+});
 
 ipcMain.handle('db-save-note', (event, note) => {
     const index = notesCache.findIndex(n => n.id === note.id);
@@ -110,7 +120,11 @@ ipcMain.handle('db-delete-note', (event, id) => {
 
 ipcMain.handle('db-get-notes-sorted', (event, sortBy) => {
     return [...notesCache].sort((a, b) => {
-        if (a.isPinned !== b.isPinned) return b.isPinned - a.isPinned;
+        // Pinned notes always come first
+        if (a.isPinned && !b.isPinned) return -1;
+        if (!a.isPinned && b.isPinned) return 1;
+        
+        // Then sort by the specified criteria
         if (sortBy.includes('title')) return sortBy.includes('DESC') ? b.title.localeCompare(a.title) : a.title.localeCompare(b.title);
         return sortBy.includes('DESC') ? new Date(b.updatedAt) - new Date(a.updatedAt) : new Date(a.updatedAt) - new Date(b.updatedAt);
     });
@@ -124,6 +138,8 @@ ipcMain.handle('db-toggle-pin-note', (event, id) => {
     }
     return 1;
 });
+
+
 
 function loadData() {
     try {
