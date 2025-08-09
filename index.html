@@ -1490,10 +1490,10 @@
         }
         
         function resetTemplates() {
+            closeTemplateModal();
             showConfirm(
                 'Reset Templates',
                 `<div class="delete-warning">
-                    <div class="warning-icon">🔄</div>
                     <div class="warning-text">
                         <strong>Reset all templates to defaults?</strong>
                         <p>This will remove all custom templates and restore the original ones.</p>
@@ -1501,12 +1501,20 @@
                 </div>`,
                 () => {
                     templates = { ...defaultTemplates };
-                    updateTemplateList();
-                    showAlert('✅ Success', 'Templates reset to defaults!');
+                    showAlert('✅ Success', 'Templates reset to defaults!', () => {
+                        showTemplateModal();
+                    });
                 },
                 'Reset Templates',
                 '🔄'
             );
+            
+            // Override cancel to return to template modal
+            const originalCancel = document.getElementById('confirmModal').querySelector('.modal-btn.cancel').onclick;
+            document.getElementById('confirmModal').querySelector('.modal-btn.cancel').onclick = () => {
+                closeConfirmModal();
+                showTemplateModal();
+            };
         }
         
         let editingTemplateKey = null;
