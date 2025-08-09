@@ -326,7 +326,8 @@
                 </div>
             </div>
             <div class="modal-buttons">
-                <button onclick="showAddTemplateForm()" class="modal-btn save">+ Add Template</button>
+                <button onclick="showAddTemplateForm()" class="modal-btn save">📋 Add Template</button>
+                <button onclick="resetTemplates()" class="modal-btn" style="background: #f39c12;">🔄 Reset Templates</button>
                 <button onclick="closeTemplateModal()" class="modal-btn cancel">Cancel</button>
             </div>
         </div>
@@ -343,6 +344,37 @@
             <div class="modal-buttons">
                 <button onclick="saveTemplate()" class="modal-btn save">Save Template</button>
                 <button onclick="closeAddTemplateModal()" class="modal-btn cancel">Cancel</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Template Editor Modal -->
+    <div id="templateEditorModal" class="modal" style="display: none;">
+        <div class="modal-content template-editor-modal">
+            <div class="editor-header">
+                <input type="text" id="templateEditorName" class="title-input" placeholder="Template name...">
+                <div class="editor-actions">
+                    <button onclick="saveTemplateEditor()" class="save-btn">Save Template</button>
+                    <button onclick="closeTemplateEditor()" class="cancel-btn">Cancel</button>
+                </div>
+            </div>
+            <div class="editor-body">
+                <div class="template-meta">
+                    <input type="text" id="templateEditorIcon" class="tags-input" placeholder="Icon (emoji)" maxlength="2" style="width: 100px;">
+                    <input type="text" id="templateEditorTitle" class="tags-input" placeholder="Note title template (use {date} for current date)..." style="flex: 1; margin-left: 0.5rem;">
+                </div>
+                <div class="editor-toolbar">
+                    <button onclick="formatTemplateText('bold')" class="toolbar-btn"><b>B</b></button>
+                    <button onclick="formatTemplateText('italic')" class="toolbar-btn"><i>I</i></button>
+                    <button onclick="formatTemplateText('underline')" class="toolbar-btn"><u>U</u></button>
+                    <button onclick="formatTemplateHeading('h1')" class="toolbar-btn">H1</button>
+                    <button onclick="formatTemplateHeading('h2')" class="toolbar-btn">H2</button>
+                    <button onclick="formatTemplateHeading('h3')" class="toolbar-btn">H3</button>
+                    <button onclick="formatTemplateText('insertUnorderedList')" class="toolbar-btn">•</button>
+                    <button onclick="formatTemplateText('insertOrderedList')" class="toolbar-btn">1.</button>
+                    <button onclick="insertTemplatePlaceholder()" class="toolbar-btn" title="Insert {date} placeholder">📅</button>
+                </div>
+                <div id="templateEditorContent" class="content-editor" contenteditable="true" data-placeholder="Start writing your template content..."></div>
             </div>
         </div>
     </div>
@@ -1213,7 +1245,7 @@
         
 
         
-        const templates = {
+        const defaultTemplates = {
             meeting: {
                 title: 'Meeting Notes - {date}',
                 content: `<h2>Meeting: [Topic]</h2>
@@ -1232,7 +1264,9 @@
 
 <h3>Next Steps</h3>
 <p></p>`,
-                tags: ['meeting', 'work']
+                tags: ['meeting', 'work'],
+                displayName: 'Meeting Notes',
+                isDefault: true
             },
             daily: {
                 title: 'Daily Journal - {date}',
@@ -1249,7 +1283,9 @@
 
 <h3>Tomorrow's Focus</h3>
 <ul><li></li></ul>`,
-                tags: ['journal', 'daily']
+                tags: ['journal', 'daily'],
+                displayName: 'Daily Journal',
+                isDefault: true
             },
             project: {
                 title: 'Project: [Name]',
@@ -1272,7 +1308,9 @@
 
 <h3>Notes</h3>
 <p></p>`,
-                tags: ['project', 'planning']
+                tags: ['project', 'planning'],
+                displayName: 'Project Plan',
+                isDefault: true
             },
             todo: {
                 title: 'To-Do List - {date}',
@@ -1289,7 +1327,9 @@
 
 <h3>Completed</h3>
 <ul><li>[x] </li></ul>`,
-                tags: ['todo', 'tasks']
+                tags: ['todo', 'tasks'],
+                displayName: 'To-Do List',
+                isDefault: true
             },
             research: {
                 title: 'Research: [Topic]',
@@ -1311,17 +1351,51 @@
 
 <h3>Next Steps</h3>
 <ul><li></li></ul>`,
-                tags: ['research', 'study']
+                tags: ['research', 'study'],
+                displayName: 'Research Notes',
+                isDefault: true
             },
             blank: {
                 title: '',
                 content: '',
-                tags: []
+                tags: [],
+                displayName: 'Blank Note',
+                isDefault: true
             }
         };
         
+        let templates = { ...defaultTemplates };
+        
         function showTemplateModal() {
+            updateTemplateList();
             document.getElementById('templateModal').style.display = 'flex';
+        }
+        
+        function updateTemplateList() {
+            const templateList = document.getElementById('templateList');
+            const templateIcons = {
+                meeting: '💼',
+                daily: '📅',
+                project: '📁',
+                todo: '✅',
+                research: '🔍',
+                blank: '📄'
+            };
+            
+            templateList.innerHTML = Object.keys(templates).map(key => {
+                const template = templates[key];
+                const icon = templateIcons[key] || template.icon || '📄';
+                return `
+                    <div class="template-item" onclick="createFromTemplate('${key}')">
+                        <span class="template-icon">${icon}</span>
+                        <span class="template-name">${template.displayName || key}</span>
+                        <div class="template-actions">
+                            <button class="template-edit-btn" onclick="editTemplate('${key}'); event.stopPropagation();" title="Edit template">✏️</button>
+                            <button class="template-delete-btn" onclick="deleteTemplate('${key}'); event.stopPropagation();" title="Delete template">🗑️</button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
         }
         
         function closeTemplateModal() {
@@ -1329,6 +1403,15 @@
         }
         
         function showAddTemplateForm() {
+            editingTemplateKey = null;
+            document.querySelector('#addTemplateModal h3').textContent = '➕ Create Template';
+            document.querySelector('#addTemplateModal .modal-btn.save').textContent = 'Save Template';
+            
+            document.getElementById('templateNameInput').value = '';
+            document.getElementById('templateIconInput').value = '';
+            document.getElementById('templateTitleInput').value = '';
+            document.getElementById('templateContentInput').value = '';
+            
             document.getElementById('templateModal').style.display = 'none';
             document.getElementById('addTemplateModal').style.display = 'flex';
             document.getElementById('templateNameInput').focus();
@@ -1353,26 +1436,146 @@
                 return;
             }
             
-            const templateKey = name.toLowerCase().replace(/\s+/g, '_');
+            const isEditing = editingTemplateKey !== null;
+            const templateKey = isEditing ? editingTemplateKey : name.toLowerCase().replace(/\s+/g, '_');
+            
             templates[templateKey] = {
                 title: title || name,
                 content: content,
-                tags: []
+                tags: templates[templateKey]?.tags || [],
+                displayName: name,
+                icon: icon,
+                isDefault: templates[templateKey]?.isDefault || false
             };
             
-            // Add to template list
-            const templateList = document.getElementById('templateList');
-            const newTemplate = document.createElement('div');
-            newTemplate.className = 'template-item';
-            newTemplate.onclick = () => createFromTemplate(templateKey);
-            newTemplate.innerHTML = `
-                <span class="template-icon">${icon}</span>
-                <span class="template-name">${name}</span>
-            `;
-            templateList.appendChild(newTemplate);
-            
             closeAddTemplateModal();
-            showAlert('✅ Success', 'Template "' + name + '" created!');
+            const action = isEditing ? 'updated' : 'created';
+            showAlert('✅ Success', `Template "${name}" ${action}!`, () => {
+                showTemplateModal();
+            });
+            
+            editingTemplateKey = null;
+        }
+        
+        function deleteTemplate(templateKey) {
+            const template = templates[templateKey];
+            if (template) {
+                closeTemplateModal();
+                showConfirm(
+                    'Delete Template',
+                    `<div class="delete-warning">
+                        <div class="warning-icon">🗑️</div>
+                        <div class="warning-text">
+                            <strong>Delete "${template.displayName || template.title}" template?</strong>
+                            <p>This template will be permanently removed.</p>
+                        </div>
+                    </div>`,
+                    () => {
+                        delete templates[templateKey];
+                        showAlert('✅ Success', 'Template deleted!', () => {
+                            showTemplateModal();
+                        });
+                    },
+                    'Delete Template',
+                    '🗑️'
+                );
+                
+                // Override cancel to return to template modal
+                const originalCancel = document.getElementById('confirmModal').querySelector('.modal-btn.cancel').onclick;
+                document.getElementById('confirmModal').querySelector('.modal-btn.cancel').onclick = () => {
+                    closeConfirmModal();
+                    showTemplateModal();
+                };
+            }
+        }
+        
+        function resetTemplates() {
+            showConfirm(
+                'Reset Templates',
+                `<div class="delete-warning">
+                    <div class="warning-icon">🔄</div>
+                    <div class="warning-text">
+                        <strong>Reset all templates to defaults?</strong>
+                        <p>This will remove all custom templates and restore the original ones.</p>
+                    </div>
+                </div>`,
+                () => {
+                    templates = { ...defaultTemplates };
+                    updateTemplateList();
+                    showAlert('✅ Success', 'Templates reset to defaults!');
+                },
+                'Reset Templates',
+                '🔄'
+            );
+        }
+        
+        let editingTemplateKey = null;
+        
+        function editTemplate(templateKey) {
+            const template = templates[templateKey];
+            if (template) {
+                editingTemplateKey = templateKey;
+                
+                document.getElementById('templateEditorName').value = template.displayName || template.title || templateKey;
+                document.getElementById('templateEditorIcon').value = template.icon || '';
+                document.getElementById('templateEditorTitle').value = template.title || '';
+                document.getElementById('templateEditorContent').innerHTML = template.content || '';
+                
+                closeTemplateModal();
+                document.getElementById('templateEditorModal').style.display = 'flex';
+                document.getElementById('templateEditorName').focus();
+            }
+        }
+        
+        function closeTemplateEditor() {
+            document.getElementById('templateEditorModal').style.display = 'none';
+            editingTemplateKey = null;
+            showTemplateModal();
+        }
+        
+        function saveTemplateEditor() {
+            const name = document.getElementById('templateEditorName').value.trim();
+            const icon = document.getElementById('templateEditorIcon').value.trim() || '📄';
+            const title = document.getElementById('templateEditorTitle').value.trim();
+            const content = document.getElementById('templateEditorContent').innerHTML;
+            
+            if (!name) {
+                showAlert('⚠️ Warning', 'Please enter a template name.');
+                return;
+            }
+            
+            const templateKey = editingTemplateKey;
+            
+            templates[templateKey] = {
+                title: title || name,
+                content: content,
+                tags: templates[templateKey]?.tags || [],
+                displayName: name,
+                icon: icon,
+                isDefault: templates[templateKey]?.isDefault || false
+            };
+            
+            closeTemplateEditor();
+            showAlert('✅ Success', `Template "${name}" updated!`, () => {
+                showTemplateModal();
+            });
+            
+            editingTemplateKey = null;
+        }
+        
+        function formatTemplateText(command) {
+            document.execCommand(command, false, null);
+            document.getElementById('templateEditorContent').focus();
+        }
+        
+        function formatTemplateHeading(tag) {
+            document.execCommand('formatBlock', false, tag);
+            document.getElementById('templateEditorContent').focus();
+        }
+        
+        function insertTemplatePlaceholder() {
+            document.execCommand('insertHTML', false, '{date}');
+            document.getElementById('templateEditorContent').focus();
         }
         
         function createFromTemplate(templateType) {
