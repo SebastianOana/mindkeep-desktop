@@ -1417,7 +1417,7 @@
         });
         
         ipcRenderer.on('update-not-available', () => {
-            showAlert('✅ Up to Date', 'You have the latest version!');
+            showAlert('✅ Up to Date', `You have the latest version: ${currentVersion}`);
             document.getElementById('updateBtn').textContent = 'Check Updates';
             document.getElementById('updateBtn').disabled = false;
         });
@@ -1429,6 +1429,7 @@
         });
         
         ipcRenderer.on('update-progress', (event, percent) => {
+			console.log(`Downloaded ${percent}%`);
             document.getElementById('updateProgress').style.display = 'block';
             document.getElementById('progressFill').style.width = percent + '%';
             document.getElementById('progressText').textContent = `Downloading... ${Math.round(percent)}%`;
@@ -1443,6 +1444,7 @@
         
         async function checkForUpdates() {
             await getCurrentVersion();
+			console.log(`Current version: ${currentVersion}`);
             await ipcRenderer.invoke('check-for-updates');
         }
         

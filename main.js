@@ -33,27 +33,34 @@ function createWindow() {
     
     // Setup auto-updater events
     if (autoUpdater) {
+		console.log('Auto updater initialized');
         autoUpdater.on('checking-for-update', () => {
+			console.log('Checking for update...');
             mainWindow.webContents.send('update-checking');
         });
         
         autoUpdater.on('update-available', (info) => {
+			console.log('Update available:', info.version);
             mainWindow.webContents.send('update-available', info.version);
         });
         
         autoUpdater.on('update-not-available', () => {
+			console.log('Update not available.');
             mainWindow.webContents.send('update-not-available');
         });
         
         autoUpdater.on('error', (err) => {
+			console.error('Update error:', err);
             mainWindow.webContents.send('update-error', err.message);
         });
         
         autoUpdater.on('download-progress', (progressObj) => {
+			console.log('Download progress:', progressObj.percent);
             mainWindow.webContents.send('update-progress', progressObj.percent);
         });
         
         autoUpdater.on('update-downloaded', () => {
+			console.log('Update downloaded.');
             mainWindow.webContents.send('update-downloaded');
         });
     }
@@ -62,6 +69,7 @@ function createWindow() {
 // IPC handlers for update functionality
 ipcMain.handle('check-for-updates', async () => {
     if (autoUpdater) {
+		console.log('Manual check for updates triggered');
         return await autoUpdater.checkForUpdates();
     }
     return null;
