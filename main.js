@@ -66,7 +66,7 @@ function createWindow() {
     }
 }
 
-app.on('before-quit', () => {
+app.on('will-finish-launching', () => {
   app.on('ready', () => {
     app.commandLine.appendSwitch(
         '--disk-cache-dir',

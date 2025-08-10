@@ -1857,6 +1857,10 @@
             document.getElementById('updateBtn').textContent = 'Check Updates';
             document.getElementById('updateBtn').disabled = false;
         });
+		
+		ipcRenderer.on('current-version', (event, version) => {
+            currentVersion = version; // Update currentVersion with the app's version
+        });
         
         ipcRenderer.on('update-error', (event, error) => {
             showAlert('❌ Error', 'Update error: ' + error);
