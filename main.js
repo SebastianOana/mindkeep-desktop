@@ -66,6 +66,14 @@ function createWindow() {
     }
 }
 
+app.on('before-quit', () => {
+  app.on('ready', () => {
+    app.commandLine.appendSwitch(
+        '--disk-cache-dir',
+        path.join(app.getPath('userData'), 'GPUCache'));
+  })
+})
+
 // IPC handlers for update functionality
 ipcMain.handle('check-for-updates', async () => {
     if (autoUpdater) {
