@@ -77,7 +77,9 @@ app.on('before-quit', () => {
 // IPC handlers for update functionality
 ipcMain.handle('check-for-updates', async () => {
     if (autoUpdater) {
+		const version = app.getVersion();
 		console.log('Manual check for updates triggered');
+		mainWindow.webContents.send('current-version', version); // Send current version to the renderer
         return await autoUpdater.checkForUpdates();
     }
     return null;
