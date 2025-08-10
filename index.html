@@ -1853,7 +1853,7 @@
         });
         
         ipcRenderer.on('update-not-available', () => {
-            showAlert('✅ Up to Date', 'You have the latest version!');
+            showAlert('✅ Up to Date', `You have the latest version! (${currentVersion})`);
             document.getElementById('updateBtn').textContent = 'Check Updates';
             document.getElementById('updateBtn').disabled = false;
         });
