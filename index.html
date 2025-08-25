@@ -2,20 +2,114 @@
 <html>
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>MindKeep</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
+    <!--
+    MindKeep Desktop Application - Main UI Structure
+
+    This HTML file defines the complete user interface for MindKeep,
+    including all modals, panels, and interactive elements.
+
+    Key Sections:
+    - App Header: Title, search, theme selector, action buttons
+    - Main Content: Sidebar (categories/notes) and content area
+    - Modals: Various dialogs for settings, import/export, etc.
+    - Text Editor: Rich text editing interface
+    -->
+
     <div class="app">
+        <!-- Application Header with branding and main controls -->
         <div class="app-header">
-            <h1 onclick="showWelcomeScreen()" style="cursor: pointer;" title="Go to Home"><span class="brain-animation">🧠</span> MindKeep</h1>
+            <!-- Clickable logo that refreshes the application -->
+            <h1 onclick="location.reload()" style="cursor: pointer;" title="Refresh App">
+            <span class="brain-animation">🧠</span> MindKeep
+            </h1>
             <div class="search-bar">
-                <input type="text" id="searchInput" placeholder="Search notes..." class="search-input">
+                <input type="text" id="searchInput" placeholder="Try: #tag, date:2024, category:work" class="search-input">
+                <button id="advancedSearchBtn" onclick="toggleAdvancedSearch()" class="advanced-search-btn" title="Advanced Search">🔍</button>
             </div>
-            <button id="updateBtn" class="update-btn" onclick="checkForUpdates()">Check Updates</button>
+
+            <button class="mobile-menu-btn" onclick="toggleMobileMenu()" title="Menu">
+                <span class="hamburger"></span>
+                <span class="hamburger"></span>
+                <span class="hamburger"></span>
+            </button>
+
+            <div class="header-controls" id="headerControls">
+
+                <div class="theme-selector-container">
+                    <select id="themeSelector" class="theme-selector" onchange="themeManager.applyTheme(this.value)" title="Select theme">
+                        <option value="dark">🌙 Dark</option>
+                        <option value="light">☀️ Light</option>
+                        <option value="blue">🌊 Ocean Blue</option>
+                        <option value="purple">🔮 Purple Haze</option>
+                        <option value="green">🌲 Forest Green</option>
+                    </select>
+                </div>
+                <div class="header-menu">
+                    <button id="menuBtn" class="header-btn menu-toggle" onclick="toggleMenu()" title="Menu">
+                        <span class="btn-icon">☰</span>
+                        <span class="btn-text">Menu</span>
+                    </button>
+                    <div id="headerMenu" class="header-dropdown" style="display: none;">
+                        <div class="menu-section">
+                            <div class="menu-section-title">Organization</div>
+                            <button class="menu-item" onclick="showTagManager(); closeMenu()">
+                                <span class="menu-icon">🏷️</span>
+                                <span class="menu-text">Tag Manager</span>
+                            </button>
+                        </div>
+                        <div class="menu-divider"></div>
+                        <div class="menu-section">
+                            <div class="menu-section-title">Data Management</div>
+                            <button class="menu-item" onclick="showExportModal(); closeMenu()">
+                                <span class="menu-icon">📤</span>
+                                <span class="menu-text">Export Notes</span>
+                            </button>
+                            <button class="menu-item" onclick="showBackupModal(); closeMenu()">
+                                <span class="menu-icon">💾</span>
+                                <span class="menu-text">Backup & Restore</span>
+                            </button>
+                        </div>
+                        <div class="menu-divider"></div>
+                        <div class="menu-section">
+                            <div class="menu-section-title">Application</div>
+                            <button class="menu-item" onclick="checkForUpdates(); closeMenu()">
+                                <span class="menu-icon">🔄</span>
+                                <span class="menu-text">Check Updates</span>
+                            </button>
+                            <button class="menu-item" onclick="showSettings(); closeMenu()">
+                                <span class="menu-icon">⚙️</span>
+                                <span class="menu-text">Settings</span>
+                            </button>
+                            <button class="menu-item" onclick="showAbout(); closeMenu()">
+                                <span class="menu-icon">ℹ️</span>
+                                <span class="menu-text">About</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
-        
-        <div class="app-body">
+
+        <!-- Main Navigation Tabs -->
+        <div class="main-tabs">
+            <button id="notesTab" class="main-tab active" onclick="showNotesView()">
+                <span class="tab-icon">📝</span>
+                <span class="tab-text">Notes</span>
+            </button>
+            <button id="tasksTab" class="main-tab" onclick="showTasksView()">
+                <span class="tab-icon">✅</span>
+                <span class="tab-text">Tasks</span>
+            </button>
+        </div>
+
+        <!-- Notes View -->
+        <div id="notesView" class="main-view active">
+            <div class="app-body">
             <div class="sidebar">
                 <div class="sidebar-header">
                     <div class="categories-tree" id="categoriesTree">
@@ -124,8 +218,20 @@
                         <select id="noteCategory" class="tags-input">
                             <option value="">Select Category</option>
                         </select>
-                        <input type="text" id="noteTags" class="tags-input" placeholder="Tags (e.g., #work #project #important)...">
+                        <div class="tag-input-container">
+                            <input type="text" id="noteTags" class="tags-input tag-input" placeholder="Tags (e.g., #work #project #important)...">
+                            <div id="tagSuggestions" class="tag-suggestions" style="display: none;"></div>
+                        </div>
+                        <div class="popular-tags">
+                            <div id="popularTagsList" class="popular-tags-list"></div>
+                        </div>
                         <input type="text" id="noteDescription" class="tags-input" placeholder="Description...">
+
+                        <!-- Task Progress Indicator -->
+                        <div id="taskProgress" class="task-progress-container" style="display: none;">
+                            <!-- Progress content will be populated by JavaScript -->
+                        </div>
+
                         <div class="editor-toolbar">
                             <button onclick="formatText('bold')" class="toolbar-btn" title="Bold">𝐁</button>
                             <button onclick="formatText('italic')" class="toolbar-btn" title="Italic">𝐼</button>
@@ -167,8 +273,73 @@
                 </div>
             </div>
         </div>
-    </div>
-    
+        </div> <!-- End Notes View -->
+
+        <!-- Tasks View -->
+        <div id="tasksView" class="main-view">
+            <div class="tasks-container">
+                <div class="tasks-header">
+                    <h2>✅ Task Management</h2>
+                    <div class="tasks-actions">
+                        <button id="newTaskBtn" class="task-btn primary" onclick="showNewTaskModal()">
+                            <span class="btn-icon">➕</span>
+                            <span class="btn-text">New Task</span>
+                        </button>
+                        <button id="newTaskListBtn" class="task-btn" onclick="showNewTaskListModal()">
+                            <span class="btn-icon">📋</span>
+                            <span class="btn-text">New List</span>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="tasks-main">
+                    <div class="task-lists-sidebar">
+                        <div class="task-lists-header">
+                            <h3>Task Lists</h3>
+                        </div>
+                        <div id="taskLists" class="task-lists">
+                            <div class="task-list-item active" data-list-id="default" onclick="selectTaskList('default')">
+                                <span class="list-icon">📝</span>
+                                <span class="list-name">General Tasks</span>
+                                <span class="task-count">0</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="tasks-content">
+                        <div class="tasks-toolbar">
+                            <div class="task-filters">
+                                <button class="filter-btn active" data-filter="all" onclick="window.filterTasksDirectly('all')">All</button>
+                                <button class="filter-btn" data-filter="pending" onclick="window.filterTasksDirectly('pending')">Pending</button>
+                                <button class="filter-btn" data-filter="completed" onclick="window.filterTasksDirectly('completed')">Completed</button>
+                            </div>
+                            <div class="task-sort">
+                                <select id="taskSort" onchange="sortTasksGlobal()">
+                                    <option value="created">Date Created</option>
+                                    <option value="priority">Priority</option>
+                                    <option value="alphabetical">Alphabetical</option>
+                                    <option value="dueDate">Due Date</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div id="tasksContainer" class="tasks-list">
+                            <div class="no-tasks-message">
+                                <div class="no-tasks-icon">✅</div>
+                                <h3>No tasks yet</h3>
+                                <p>Create your first task to get started!</p>
+                                <button onclick="showNewTaskModal()" class="task-btn primary">
+                                    <span class="btn-icon">➕</span>
+                                    <span class="btn-text">Create Task</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div> <!-- End Main Views -->
+
     <!-- Category Modal -->
     <div id="categoryModal" class="modal" style="display: none;">
         <div class="modal-content">
@@ -177,7 +348,33 @@
             <select id="parentCategoryInput" class="modal-input">
                 <option value="">No parent (root category)</option>
             </select>
-            <input type="color" id="categoryColorInput" value="#4a9eff" class="modal-input">
+
+            <div class="category-color-section">
+                <label for="categoryColorInput">Category Color:</label>
+                <div class="color-picker-container">
+                    <input type="color" id="categoryColorInput" value="#4a9eff" class="color-input">
+                    <div class="preset-colors">
+                        <button type="button" class="preset-color" data-color="#4A9EFF" style="background: #4A9EFF" title="Blue"></button>
+                        <button type="button" class="preset-color" data-color="#10B981" style="background: #10B981" title="Green"></button>
+                        <button type="button" class="preset-color" data-color="#F59E0B" style="background: #F59E0B" title="Orange"></button>
+                        <button type="button" class="preset-color" data-color="#EF4444" style="background: #EF4444" title="Red"></button>
+                        <button type="button" class="preset-color" data-color="#8B5CF6" style="background: #8B5CF6" title="Purple"></button>
+                        <button type="button" class="preset-color" data-color="#EC4899" style="background: #EC4899" title="Pink"></button>
+                        <button type="button" class="preset-color" data-color="#6B7280" style="background: #6B7280" title="Gray"></button>
+                        <button type="button" class="preset-color" data-color="#14B8A6" style="background: #14B8A6" title="Teal"></button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="category-templates">
+                <label>Quick Templates:</label>
+                <div class="template-buttons">
+                    <button type="button" class="template-btn" data-template="work">💼 <br> Work</button>
+                    <button type="button" class="template-btn" data-template="personal">🏠 Personal</button>
+                    <button type="button" class="template-btn" data-template="projects">🚀 Projects</button>
+                    <button type="button" class="template-btn" data-template="learning">📚 Learning</button>
+                </div>
+            </div>
             <div class="modal-buttons">
                 <button id="categorySaveBtn" onclick="saveCategoryModal()" class="modal-btn save">Create</button>
                 <button onclick="closeCategoryModal()" class="modal-btn cancel">Cancel</button>
@@ -247,6 +444,224 @@
             </div>
         </div>
     </div>
+
+    <!-- Tag Manager Modal -->
+    <div id="tagManagerModal" class="modal" style="display: none;">
+        <div class="modal-content tag-manager-content">
+            <button class="modal-close" onclick="closeTagManager()">&times;</button>
+            <h3>🏷️ Tag Manager</h3>
+
+            <div class="tag-manager-sections">
+                <div class="tag-stats-section">
+                    <h4>📊 Tag Statistics</h4>
+                    <div class="tag-stats">
+                        <div class="stat-item">
+                            <span class="stat-label">Total Tags:</span>
+                            <span id="totalTagsCount" class="stat-value">0</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-label">Most Used:</span>
+                            <span id="mostUsedTag" class="stat-value">-</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="all-tags-section">
+                    <h4>🏷️ All Tags</h4>
+                    <div class="tag-search">
+                        <input type="text" id="tagSearchInput" placeholder="Search tags..." class="modal-input">
+                    </div>
+                    <div id="allTagsList" class="all-tags-list"></div>
+                </div>
+
+                <div class="tag-actions-section">
+                    <h4>⚡ Quick Actions</h4>
+                    <div class="tag-action-buttons">
+                        <button onclick="showUnusedTags()" class="modal-btn">Find Unused Tags</button>
+                        <button onclick="exportTags()" class="modal-btn">Export Tags</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="modal-buttons">
+                <button onclick="closeTagManager()" class="modal-btn cancel">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Task Manager Modal -->
+    <div id="taskManagerModal" class="modal" style="display: none;">
+        <div class="modal-content task-manager-content">
+            <button class="modal-close" onclick="closeTaskManager()">&times;</button>
+            <h3>📋 Task Dashboard</h3>
+
+            <div class="task-manager-toolbar">
+                <div class="task-filters">
+                    <select id="taskFilterStatus" class="task-filter-select" onchange="filterTasks()">
+                        <option value="all">All Tasks</option>
+                        <option value="pending">Pending</option>
+                        <option value="completed">Completed</option>
+                        <option value="overdue">Overdue</option>
+                    </select>
+                    <select id="taskFilterPriority" class="task-filter-select" onchange="filterTasks()">
+                        <option value="all">All Priorities</option>
+                        <option value="high">High Priority</option>
+                        <option value="medium">Medium Priority</option>
+                        <option value="low">Low Priority</option>
+                    </select>
+                    <select id="taskFilterCategory" class="task-filter-select" onchange="filterTasks()">
+                        <option value="all">All Categories</option>
+                    </select>
+                </div>
+                <div class="task-actions">
+                    <button onclick="exportTasks()" class="modal-btn">Export Tasks</button>
+                    <button onclick="showTaskHelp()" class="modal-btn">Help</button>
+                </div>
+            </div>
+
+            <div id="taskDashboard" class="task-dashboard-content">
+                <!-- Task content will be populated by JavaScript -->
+            </div>
+
+            <div class="modal-buttons">
+                <button onclick="closeTaskManager()" class="modal-btn cancel">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- New Task Modal -->
+    <div id="newTaskModal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <button class="modal-close" onclick="closeNewTaskModal()">&times;</button>
+            <h3>➕ Create New Task</h3>
+
+            <div class="task-form">
+                <input type="text" id="taskTitle" class="modal-input" placeholder="Task title..." maxlength="200">
+
+                <textarea id="taskDescription" class="modal-input" placeholder="Description (optional)..." rows="3"></textarea>
+
+                <div class="task-options">
+                    <div class="task-option">
+                        <label for="taskPriority">Priority:</label>
+                        <select id="taskPriority" class="modal-input">
+                            <option value="low">🟢 Low</option>
+                            <option value="medium" selected>🟡 Medium</option>
+                            <option value="high">🔴 High</option>
+                        </select>
+                    </div>
+
+                    <div class="task-option">
+                        <label for="taskDueDate">Due Date:</label>
+                        <input type="date" id="taskDueDate" class="modal-input">
+                    </div>
+
+                    <div class="task-option">
+                        <label for="taskList">Task List:</label>
+                        <select id="taskList" class="modal-input">
+                            <option value="default">General Tasks</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <div class="modal-buttons">
+                <button onclick="createTask()" class="modal-btn save">Create Task</button>
+                <button onclick="closeNewTaskModal()" class="modal-btn cancel">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- New Task List Modal -->
+    <div id="newTaskListModal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <button class="modal-close" onclick="closeNewTaskListModal()">&times;</button>
+            <h3>📋 Create New Task List</h3>
+
+            <div class="task-list-form">
+                <input type="text" id="taskListName" class="modal-input" placeholder="List name..." maxlength="50">
+
+                <div class="task-list-options">
+                    <div class="task-option">
+                        <label for="taskListIcon">Icon:</label>
+                        <select id="taskListIcon" class="modal-input">
+                            <option value="📝">📝 General</option>
+                            <option value="💼">💼 Work</option>
+                            <option value="🏠">🏠 Personal</option>
+                            <option value="🛒">🛒 Shopping</option>
+                            <option value="🎯">🎯 Goals</option>
+                            <option value="📚">📚 Learning</option>
+                            <option value="🚀">🚀 Projects</option>
+                            <option value="❤️">❤️ Health</option>
+                        </select>
+                    </div>
+
+                    <div class="task-option">
+                        <label for="taskListColor">Color:</label>
+                        <div class="color-picker-container">
+                            <input type="color" id="taskListColor" value="#4a9eff" class="color-input">
+                            <div class="preset-colors">
+                                <button type="button" class="preset-color" data-color="#4A9EFF" style="background: #4A9EFF" title="Blue"></button>
+                                <button type="button" class="preset-color" data-color="#10B981" style="background: #10B981" title="Green"></button>
+                                <button type="button" class="preset-color" data-color="#F59E0B" style="background: #F59E0B" title="Orange"></button>
+                                <button type="button" class="preset-color" data-color="#EF4444" style="background: #EF4444" title="Red"></button>
+                                <button type="button" class="preset-color" data-color="#8B5CF6" style="background: #8B5CF6" title="Purple"></button>
+                                <button type="button" class="preset-color" data-color="#EC4899" style="background: #EC4899" title="Pink"></button>
+                                <button type="button" class="preset-color" data-color="#6B7280" style="background: #6B7280" title="Gray"></button>
+                                <button type="button" class="preset-color" data-color="#14B8A6" style="background: #14B8A6" title="Teal"></button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="modal-buttons">
+                <button onclick="createTaskList()" class="modal-btn save">Create List</button>
+                <button onclick="closeNewTaskListModal()" class="modal-btn cancel">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Task Modal -->
+    <div id="editTaskModal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <button class="modal-close" onclick="closeEditTaskModal()">&times;</button>
+            <h3>✏️ Edit Task</h3>
+
+            <div class="task-form">
+                <input type="text" id="editTaskTitle" class="modal-input" placeholder="Task title..." maxlength="200">
+
+                <textarea id="editTaskDescription" class="modal-input" placeholder="Description (optional)..." rows="3"></textarea>
+
+                <div class="task-options">
+                    <div class="task-option">
+                        <label for="editTaskPriority">Priority:</label>
+                        <select id="editTaskPriority" class="modal-input">
+                            <option value="low">🟢 Low</option>
+                            <option value="medium">🟡 Medium</option>
+                            <option value="high">🔴 High</option>
+                        </select>
+                    </div>
+
+                    <div class="task-option">
+                        <label for="editTaskDueDate">Due Date:</label>
+                        <input type="date" id="editTaskDueDate" class="modal-input">
+                    </div>
+
+                    <div class="task-option">
+                        <label for="editTaskList">Task List:</label>
+                        <select id="editTaskList" class="modal-input">
+                            <option value="default">General Tasks</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <div class="modal-buttons">
+                <button onclick="updateTask()" class="modal-btn save">Update Task</button>
+                <button onclick="closeEditTaskModal()" class="modal-btn cancel">Cancel</button>
+            </div>
+        </div>
+    </div>
     
     <!-- Duplicates Modal -->
     <div id="duplicatesModal" class="modal" style="display: none;">
@@ -300,7 +715,81 @@
             </div>
         </div>
     </div>
-    
+
+
+    <!-- Advanced Search Modal -->
+    <div id="advancedSearchModal" class="modal" style="display: none;">
+        <div class="modal-content advanced-search-content">
+            <button class="modal-close" onclick="closeAdvancedSearch()">&times;</button>
+            <h3>🔍 Advanced Search</h3>
+            <div class="search-filters">
+                <div class="filter-group">
+                    <label>Search in:</label>
+                    <div class="checkbox-group">
+                        <label><input type="checkbox" id="searchInTitle" checked> Title</label>
+                        <label><input type="checkbox" id="searchInContent" checked> Content</label>
+                        <label><input type="checkbox" id="searchInTags" checked> Tags</label>
+                        <label><input type="checkbox" id="searchInDescription" checked> Description</label>
+                    </div>
+                </div>
+                <div class="filter-group">
+                    <label for="searchCategory">Category:</label>
+                    <select id="searchCategory" class="modal-input">
+                        <option value="">All Categories</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label for="searchDateFrom">Date Range:</label>
+                    <div class="date-range">
+                        <input type="date" id="searchDateFrom" class="modal-input">
+                        <span>to</span>
+                        <input type="date" id="searchDateTo" class="modal-input">
+                    </div>
+                </div>
+                <div class="filter-group">
+                    <label for="searchTags">Tags (comma-separated):</label>
+                    <input type="text" id="searchTags" placeholder="work, project, important" class="modal-input">
+                </div>
+                <div class="filter-group">
+                    <label><input type="checkbox" id="searchPinnedOnly"> Pinned notes only</label>
+                </div>
+            </div>
+            <div class="modal-buttons">
+                <button onclick="performAdvancedSearch()" class="modal-btn save">🔍 Search</button>
+                <button onclick="clearAdvancedSearch()" class="modal-btn">🗑️ Clear</button>
+                <button onclick="closeAdvancedSearch()" class="modal-btn cancel">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Capture Modal -->
+    <div id="quickCaptureModal" class="modal" style="display: none;">
+        <div class="modal-content quick-capture-content">
+            <button class="modal-close" onclick="closeQuickCapture()">&times;</button>
+            <h3>⚡Quick Capture</h3>
+            <input type="text" id="quickCaptureTitle" placeholder="Note title..." class="modal-input">
+            <select id="quickCaptureCategory" class="modal-input">
+                <option value="">Select Category</option>
+            </select>
+
+            <div class="tag-input-container">
+                <input type="text" id="quickCaptureTags" class="modal-input tag-input" placeholder="Tags (e.g., #work #project #important)...">
+                <div id="quickCaptureTagSuggestions" class="tag-suggestions" style="display: none;"></div>
+            </div>
+            <div class="popular-tags">
+                <label>Popular Tags:</label>
+                <div id="quickCapturePopularTags" class="popular-tags-list"></div>
+            </div>
+
+            <textarea id="quickCaptureContent" placeholder="Start typing your note..." class="quick-capture-textarea"></textarea>
+            <div class="modal-buttons">
+                <button onclick="saveQuickCapture()" class="modal-btn save">💾 & Close</button>
+                <button onclick="saveAndEditQuickCapture()" class="modal-btn">💾 & Edit</button>
+                <button onclick="closeQuickCapture()" class="modal-btn cancel">Cancel</button>
+            </div>
+        </div>
+    </div>
+
     <!-- Floating In-Note Search -->
     <div id="floatingSearch" class="floating-search" style="display: none;">
         <input type="text" id="floatingSearchInput" placeholder="Search in note..." class="floating-search-input">
@@ -311,7 +800,7 @@
             <button onclick="closeFloatingSearch()" class="floating-close-btn">✕</button>
         </div>
     </div>
-    
+
     <!-- Template Modal -->
     <div id="templateModal" class="modal" style="display: none;">
         <div class="modal-content template-modal">
@@ -349,7 +838,7 @@
             </div>
         </div>
     </div>
-    
+
     <!-- Add Template Modal -->
     <div id="addTemplateModal" class="modal" style="display: none;">
         <div class="modal-content">
@@ -364,7 +853,7 @@
             </div>
         </div>
     </div>
-    
+
     <!-- Template Editor Modal -->
     <div id="templateEditorModal" class="modal" style="display: none;">
         <div class="modal-content template-editor-modal">
@@ -395,7 +884,7 @@
             </div>
         </div>
     </div>
-    
+
     <!-- Category Context Menu -->
     <div id="categoryContextMenu" class="context-menu" style="display: none;">
         <div class="context-item" onclick="contextEditCategory()">
@@ -412,7 +901,7 @@
             <span class="context-text">Delete</span>
         </div>
     </div>
-    
+
     <!-- Note Context Menu -->
     <div id="noteContextMenu" class="context-menu" style="display: none;">
         <div class="context-item" onclick="contextEditNote()">
@@ -427,6 +916,10 @@
             <span class="context-icon">📌</span>
             <span class="context-text">Pin/Unpin</span>
         </div>
+        <div class="context-item" onclick="contextExportNote()">
+            <span class="context-icon">📤</span>
+            <span class="context-text">Export</span>
+        </div>
         <div class="context-separator"></div>
         <div class="context-item context-delete" onclick="contextDeleteNote()">
             <span class="context-icon">🗑️</span>
@@ -434,2245 +927,232 @@
         </div>
     </div>
 
-        // <script>
-        const { ipcRenderer } = require('electron');
-        
-        // App data
-        let categories = [];
-        let notes = [];
-        let editingCategory = null;
-        
-        // Initialize app
-        async function initApp() {
-            try {
-                // Load categories from database
-                categories = await ipcRenderer.invoke('db-get-categories');
-                
-                // Load notes from database
-                notes = await ipcRenderer.invoke('db-get-notes');
-                
-                updateCategorySelector();
-                updateNotesList();
-            } catch (error) {
-                console.error('Initialization error:', error);
-                updateCategorySelector();
-                updateNotesList();
-            }
-        }
-        
-        async function loadNotes() {
-            try {
-                notes = await ipcRenderer.invoke('db-get-notes');
-            } catch (error) {
-                console.error('Error loading notes:', error);
-            }
-        }
-        
-        let currentCategory = 'all';
-        let bulkMode = false;
-        let selectedNotes = new Set();
-        
-        let expandedCategories = new Set();
-        
-        function updateCategorySelector() {
-            const tree = document.getElementById('categoriesTree');
-            const noteCategory = document.getElementById('noteCategory');
-            
-            const buildCategoryOptions = (cats, parentName = null, level = 0) => {
-                const children = cats.filter(cat => cat.parent === parentName);
-                let options = '';
-                
-                children.forEach(cat => {
-                    const indent = '\u00A0\u00A0\u00A0\u00A0'.repeat(level);
-                    options += `<option value="${cat.name}">${indent}${cat.name}</option>`;
-                    options += buildCategoryOptions(cats, cat.name, level + 1);
-                });
-                
-                return options;
-            };
-            
-            // Build tree structure
-            const allNotesCount = notes.length;
-            const rootCats = categories.filter(cat => !cat.parent);
-            
-            let treeHtml = `
-                <div class="category-item root-category ${currentCategory === 'all' ? 'active' : ''}" onclick="selectCategory('all')">
-                    <span class="category-icon">📁</span>
-                    <span class="category-name">All Notes</span>
-                    <span class="note-count">${allNotesCount}</span>
-                </div>
-            `;
-            
-            categories.filter(cat => !cat.parent).forEach(cat => {
-                const noteCount = notes.filter(note => note.category === cat.name).length;
-                const children = categories.filter(c => c.parent === cat.name);
-                const hasChildren = children.length > 0;
-                const isExpanded = expandedCategories.has(cat.name);
-                
-                treeHtml += `
-                    <div class="category-item ${currentCategory === cat.name ? 'active' : ''}" 
-                         data-category-name="${cat.name}"
-                         ondragover="handleCategoryReorderDragOver(event)" 
-                         ondragleave="handleCategoryDragLeave(event)" 
-                         ondrop="handleCategoryReorderDrop(event)">
-                        <span class="drag-handle" 
-                              draggable="true"
-                              ondragstart="handleCategoryDragStart(event)"
-                              ondragend="handleCategoryDragEnd(event)"
-                              title="Drag to reorder">⋮</span>
-                        ${hasChildren ? `<span class="expand-arrow ${isExpanded ? 'expanded' : ''}" onclick="toggleCategory('${cat.name}'); event.stopPropagation();">▶</span>` : '<span class="expand-spacer"></span>'}
-                        <span class="category-icon" style="color: ${cat.color}" onclick="selectCategory('${cat.name}')">📁</span>
-                        <span class="category-name" onclick="selectCategory('${cat.name}')" oncontextmenu="window.showCategoryContextMenu(event, '${cat.name}'); return false;">${cat.name}</span>
-                        <span class="note-count" onclick="selectCategory('${cat.name}')">${noteCount}</span>
-                    </div>
-                `;
-                
-                if (hasChildren && isExpanded) {
-                    const buildSubTree = (parentName, level) => {
-                        const subChildren = categories.filter(c => c.parent === parentName);
-                        let subHtml = '';
-                        subChildren.forEach(subCat => {
-                            const subNoteCount = notes.filter(note => note.category === subCat.name).length;
-                            const subSubChildren = categories.filter(c => c.parent === subCat.name);
-                            const subHasChildren = subSubChildren.length > 0;
-                            const subIsExpanded = expandedCategories.has(subCat.name);
-                            const marginLeft = level * 1.5;
-                            
-                            subHtml += `
-                                <div class="category-item ${currentCategory === subCat.name ? 'active' : ''}" 
-                                     style="margin-left: ${marginLeft}rem;"
-                                     data-category-name="${subCat.name}"
-                                     ondragover="handleCategoryReorderDragOver(event)" 
-                                     ondragleave="handleCategoryDragLeave(event)" 
-                                     ondrop="handleCategoryReorderDrop(event)">
-                                    <span class="drag-handle" 
-                                          draggable="true"
-                                          ondragstart="handleCategoryDragStart(event)"
-                                          ondragend="handleCategoryDragEnd(event)"
-                                          title="Drag to reorder">⋮</span>
-                                    ${subHasChildren ? `<span class="expand-arrow ${subIsExpanded ? 'expanded' : ''}" onclick="toggleCategory('${subCat.name}'); event.stopPropagation();">▶</span>` : '<span class="expand-spacer"></span>'}
-                                    <span class="category-icon" style="color: ${subCat.color}" onclick="selectCategory('${subCat.name}')">📁</span>
-                                    <span class="category-name" onclick="selectCategory('${subCat.name}')" oncontextmenu="window.showCategoryContextMenu(event, '${subCat.name}'); return false;">${subCat.name}</span>
-                                    <span class="note-count" onclick="selectCategory('${subCat.name}')">${subNoteCount}</span>
-                                </div>
-                            `;
-                            
-                            if (subHasChildren && subIsExpanded) {
-                                subHtml += buildSubTree(subCat.name, level + 1);
-                            }
-                        });
-                        return subHtml;
-                    };
-                    
-                    treeHtml += buildSubTree(cat.name, 1);
-                }
-            });
-            
-            tree.innerHTML = treeHtml;
-            
-            const noteOptions = '<option value="">Select Category</option>' + buildCategoryOptions(categories);
-            noteCategory.innerHTML = noteOptions;
-        }
-        
-        function toggleCategory(categoryName) {
-            if (expandedCategories.has(categoryName)) {
-                expandedCategories.delete(categoryName);
-            } else {
-                expandedCategories.add(categoryName);
-            }
-            updateCategorySelector();
-        }
-        
-        function selectCategory(categoryName) {
-            currentCategory = categoryName;
-            updateCategorySelector();
-            updateNotesList();
-        }
-        
+    <!-- Enhanced Import/Export Modal -->
+    <div id="exportModal" class="modal" style="display: none;">
+        <div class="modal-content import-export-modal">
+            <h3>📥 Import & Export Notes 📤</h3>
 
-        
-        function updateNotesList() {
-            const notesList = document.getElementById('notesList');
-            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
-            
-            // Filter notes by selected category
-            let filteredNotes = currentCategory === 'all' ? 
-                notes : notes.filter(note => note.category === currentCategory);
-            
-            // Filter by search term
-            if (searchTerm) {
-                if (searchTerm.startsWith('#')) {
-                    // Tag search
-                    const tagSearch = searchTerm.substring(1);
-                    filteredNotes = filteredNotes.filter(note => 
-                        note.tags && note.tags.some(tag => tag.toLowerCase().includes(tagSearch))
-                    );
-                } else {
-                    // Regular search
-                    filteredNotes = filteredNotes.filter(note => 
-                        note.title.toLowerCase().includes(searchTerm) ||
-                        note.content.toLowerCase().includes(searchTerm) ||
-                        note.description.toLowerCase().includes(searchTerm)
-                    );
-                }
-            }
-            
-            if (filteredNotes.length === 0) {
-                notesList.innerHTML = '<div class="no-notes-message">No notes found</div>';
-                return;
-            }
-            
-            notesList.innerHTML = filteredNotes.map(note => {
-                const category = categories.find(cat => cat.name === note.category) || { color: '#4a9eff' };
-                const isSelected = selectedNotes.has(note.id);
-                const checkboxHtml = bulkMode ? `<input type="checkbox" ${isSelected ? 'checked' : ''} onchange="toggleNoteSelection('${note.id}')" onclick="event.stopPropagation()">` : '';
-                const pinIcon = note.isPinned ? '📌' : '';
-                
-                return `
-                    <div class="note-item ${isSelected ? 'selected' : ''} ${note.isPinned ? 'pinned' : ''}" 
-                         style="border-left: 4px solid ${category.color}; padding: 1rem; margin-bottom: 0.5rem; background: ${isSelected ? '#555' : '#404040'}; border-radius: 4px; cursor: pointer; display: flex; align-items: center; gap: 10px;" 
-                         draggable="true" 
-                         data-note-id="${note.id}"
-                         ondragstart="handleNoteDragStart(event)"
-                         ondragend="handleNoteDragEnd(event)"
-                         onclick="${bulkMode ? `toggleNoteSelection('${note.id}')` : `viewNote('${note.id}')`}"
-                         oncontextmenu="showNoteContextMenu(event, '${note.id}'); return false;">
-                        ${checkboxHtml}
-                        <div style="flex: 1;">
-                            <div style="font-weight: bold; color: #e0e0e0; display: flex; align-items: center; gap: 0.5rem;">
-                                ${pinIcon}
-                                <span>${highlightSearchTerm(note.title)}</span>
-                            </div>
-                            <div style="color: #888; font-size: 0.9rem; margin-top: 0.5rem;">${new Date(note.updatedAt).toLocaleDateString()}</div>
-                        </div>
-                        ${!bulkMode ? `<button class="pin-btn" onclick="togglePin('${note.id}'); event.stopPropagation();" title="${note.isPinned ? 'Unpin' : 'Pin'} note">${note.isPinned ? '📌' : '📍'}</button>` : ''}
+            <div class="import-export-tabs">
+                <button class="import-export-tab active" onclick="showImportExportTab('import')">📥 Import Notes</button>
+                <button class="import-export-tab" onclick="showImportExportTab('export')">📤 Export Notes</button>
+            </div>
+
+            <!-- Import Tab -->
+            <div id="importTab" class="import-export-tab-content">
+                <div class="import-section">
+                    <div class="import-header">
+                        <h4>📥 Import Notes</h4>
+                        <p>Drag & drop files or click to browse</p>
                     </div>
-                `;
-            }).join('');
-        }
-        
-        // Process note links @NoteName
-        function processNoteLinks(text) {
-            if (!text) return text;
-            
-            return text.replace(/@([A-Za-z0-9\s\-_]+)/g, (match, noteName) => {
-                const trimmedName = noteName.trim();
-                const linkedNote = notes.find(note => 
-                    note.title.toLowerCase().trim() === trimmedName.toLowerCase().trim()
-                );
-                
-                if (linkedNote) {
-                    return `<span class="note-link" data-note-id="${linkedNote.id}" style="color: #4a9eff !important; cursor: pointer; text-decoration: underline; font-weight: bold; background: rgba(74, 158, 255, 0.1); padding: 0.1rem 0.2rem; border-radius: 3px;">@${trimmedName}</span>`;
-                } else {
-                    return `<span style="color: #888;">@${trimmedName}</span>`;
-                }
-            });
-        }
-        
-        // Bulk operations
-        function toggleBulkMode() {
-            bulkMode = !bulkMode;
-            selectedNotes.clear();
-            const bulkActions = document.getElementById('bulkActions');
-            const toggleBtn = document.querySelector('.bulk-toggle-btn');
-            const toggleIcon = toggleBtn.querySelector('.btn-icon');
-            const toggleText = toggleBtn.querySelector('.btn-text');
-            const newNoteBtn = document.querySelector('.new-note-btn');
-            const templateBtn = document.querySelector('.template-btn');
-            
-            bulkActions.style.display = bulkMode ? 'flex' : 'none';
-            
-            if (bulkMode) {
-                toggleBtn.style.display = 'none';
-                newNoteBtn.style.display = 'none';
-                templateBtn.style.display = 'none';
-            } else {
-                toggleBtn.style.display = 'flex';
-                newNoteBtn.style.display = 'flex';
-                templateBtn.style.display = 'flex';
-                toggleIcon.textContent = '☑️';
-                toggleText.textContent = 'Select Multiple';
-                toggleBtn.style.background = 'linear-gradient(135deg, #6c757d, #5a6268)';
-                toggleBtn.classList.remove('exit-mode');
-            }
-            
-            updateNotesList();
-        }
-        
-        function toggleNoteSelection(noteId) {
-            if (selectedNotes.has(noteId)) {
-                selectedNotes.delete(noteId);
-            } else {
-                selectedNotes.add(noteId);
-            }
-            
-            // Update selection counter immediately
-            updateSelectionCounter();
-            updateNotesList();
-        }
-        
-        function updateSelectionCounter() {
-            const bulkActions = document.getElementById('bulkActions');
-            const selectionCount = document.querySelector('.selection-count');
-            
-            if (bulkActions && selectionCount && bulkMode) {
-                const count = selectedNotes.size;
-                bulkActions.setAttribute('data-selected-count', count);
-                selectionCount.textContent = `${count} selected`;
-                
-                // Enable/disable action buttons based on selection
-                const actionButtons = document.querySelectorAll('.bulk-btn:not(.bulk-exit-btn)');
-                actionButtons.forEach(btn => {
-                    btn.disabled = count === 0;
-                    btn.style.opacity = count === 0 ? '0.5' : '1';
-                });
-            }
-        }
-        
-        function bulkDelete() {
-            if (selectedNotes.size === 0) {
-                showAlert('⚠️ Warning', 'No notes selected.');
-                return;
-            }
-            
-            showConfirm(
-                'Delete Selected Notes',
-                `<div class="delete-warning">
-                    <div class="warning-icon">🗑️</div>
-                    <div class="warning-text">
-                        <strong>Delete ${selectedNotes.size} selected note${selectedNotes.size > 1 ? 's' : ''}?</strong>
-                        <p>This action cannot be undone.</p>
-                    </div>
-                </div>`,
-                () => {
-                selectedNotes.forEach(noteId => {
-                    try {
-                        const filePath = path.join(notesDir, noteId + '.json');
-                        if (fs.existsSync(filePath)) {
-                            fs.unlinkSync(filePath);
-                        }
-                        notes = notes.filter(note => note.id !== noteId);
-                    } catch (error) {
-                        console.error('Error deleting note:', error);
-                    }
-                });
-                
-                    selectedNotes.clear();
-                    updateNotesList();
-                    showAlert('✅ Success', 'Selected notes deleted!');
-                },
-                'Delete Notes',
-                '🗑️'
-            );
-        }
-        
-        function bulkMove() {
-            if (selectedNotes.size === 0) {
-                showAlert('⚠️ Warning', 'No notes selected.');
-                return;
-            }
-            
-            document.getElementById('selectedCount').textContent = selectedNotes.size;
-            const buildHierarchicalOptions = (parentName = null, level = 0) => {
-                const children = categories.filter(cat => cat.parent === parentName);
-                let options = '';
-                
-                children.forEach(cat => {
-                    const indent = '\u00A0\u00A0\u00A0'.repeat(level);
-                    options += `<option value="${cat.name}">${indent}${cat.name}</option>`;
-                    options += buildHierarchicalOptions(cat.name, level + 1);
-                });
-                
-                return options;
-            };
-            
-            const bulkMoveSelect = document.getElementById('bulkMoveToCategory');
-            bulkMoveSelect.innerHTML = '<option value="">Select Category</option>' + buildHierarchicalOptions();
-            document.getElementById('bulkMoveModal').style.display = 'flex';
-        }
-        
-        function confirmBulkMove() {
-            const newCategory = document.getElementById('bulkMoveToCategory').value;
-            if (!newCategory) {
-                showAlert('⚠️ Warning', 'Please select a category.');
-                return;
-            }
-            
-            selectedNotes.forEach(noteId => {
-                const note = notes.find(n => n.id === noteId);
-                if (note) {
-                    note.category = newCategory;
-                    note.updatedAt = new Date().toISOString();
-                    try {
-                        const filePath = path.join(notesDir, note.id + '.json');
-                        fs.writeFileSync(filePath, JSON.stringify(note, null, 2));
-                    } catch (error) {
-                        console.error('Error updating note:', error);
-                    }
-                }
-            });
-            
-            selectedNotes.clear();
-            updateNotesList();
-            closeBulkMoveModal();
-            showAlert('✅ Success', 'Notes moved successfully!');
-        }
-        
-        function closeBulkMoveModal() {
-            document.getElementById('bulkMoveModal').style.display = 'none';
-        }
-        
-        // Find duplicates
-        function findDuplicates() {
-            const duplicates = [];
-            const seen = new Map();
-            
-            notes.forEach(note => {
-                const key = note.title.toLowerCase().trim();
-                if (seen.has(key)) {
-                    const existing = seen.get(key);
-                    if (!duplicates.find(d => d.original.id === existing.id)) {
-                        duplicates.push({ original: existing, duplicates: [note] });
-                    } else {
-                        duplicates.find(d => d.original.id === existing.id).duplicates.push(note);
-                    }
-                } else {
-                    seen.set(key, note);
-                }
-            });
-            
-            if (duplicates.length === 0) {
-                showAlert('✅ No Duplicates', 'No duplicate notes found!');
-                return;
-            }
-            
-            const duplicatesList = document.getElementById('duplicatesList');
-            duplicatesList.innerHTML = duplicates.map(group => `
-                <div class="duplicate-group" style="margin-bottom: 20px; padding: 15px; background: #333; border-radius: 8px;">
-                    <h4 style="color: #e0e0e0; margin-bottom: 10px;">"${group.original.title}"</h4>
-                    <div class="duplicate-item" style="margin-bottom: 10px; padding: 10px; background: #404040; border-radius: 4px;">
-                        <strong>Original:</strong> ${new Date(group.original.createdAt).toLocaleDateString()}
-                        <button onclick="viewNote('${group.original.id}'); closeDuplicatesModal();" style="margin-left: 10px;">View</button>
-                    </div>
-                    ${group.duplicates.map(dup => `
-                        <div class="duplicate-item" style="margin-bottom: 5px; padding: 10px; background: #555; border-radius: 4px;">
-                            <strong>Duplicate:</strong> ${new Date(dup.createdAt).toLocaleDateString()}
-                            <button onclick="viewNote('${dup.id}'); closeDuplicatesModal();" style="margin-left: 10px;">View</button>
-                            <button onclick="deleteDuplicate('${dup.id}')" style="margin-left: 5px; background: #d32f2f;">Delete</button>
-                        </div>
-                    `).join('')}
-                </div>
-            `).join('');
-            
-            document.getElementById('duplicatesModal').style.display = 'flex';
-        }
-        
-        async function deleteDuplicate(noteId) {
-            const note = notes.find(n => n.id === noteId);
-            showConfirm(
-                'Delete Duplicate Note',
-                `<div class="delete-warning">
-                    <div class="warning-icon">🗑️</div>
-                    <div class="warning-text">
-                        <strong>Delete "${note ? note.title : 'Unknown'}"?</strong>
-                        <p>This duplicate note will be permanently deleted.</p>
-                        <p style="color: #888; font-size: 0.9rem; margin-top: 0.5rem;">The original note will remain untouched.</p>
-                    </div>
-                </div>`,
-                async () => {
-                    try {
-                        await ipcRenderer.invoke('db-delete-note', noteId);
-                        notes = await ipcRenderer.invoke('db-get-notes');
-                        updateNotesList();
-                        findDuplicates(); // Refresh duplicates list
-                        showAlert('✅ Success', 'Duplicate note deleted!');
-                    } catch (error) {
-                        showAlert('❌ Error', 'Error deleting note: ' + error.message);
-                    }
-                },
-                'Delete Duplicate',
-                '🗑️'
-            );
-        }
-        
-        function closeDuplicatesModal() {
-            document.getElementById('duplicatesModal').style.display = 'none';
-        }
-        
-        // Move single note
-        function moveNoteToCategory() {
-            if (!currentNote) return;
-            
-            const buildHierarchicalOptions = (parentName = null, level = 0) => {
-                const children = categories.filter(cat => cat.parent === parentName && cat.name !== currentNote.category);
-                let options = '';
-                
-                children.forEach(cat => {
-                    const indent = '\u00A0\u00A0\u00A0'.repeat(level);
-                    options += `<option value="${cat.name}">${indent}${cat.name}</option>`;
-                    options += buildHierarchicalOptions(cat.name, level + 1);
-                });
-                
-                return options;
-            };
-            
-            const moveSelect = document.getElementById('moveToCategory');
-            moveSelect.innerHTML = '<option value="">Select Category</option>' + buildHierarchicalOptions();
-            document.getElementById('moveNoteModal').style.display = 'flex';
-        }
-        
-        function confirmMoveNote() {
-            const newCategory = document.getElementById('moveToCategory').value;
-            if (!newCategory) {
-                showAlert('⚠️ Warning', 'Please select a category.');
-                return;
-            }
-            
-            currentNote.category = newCategory;
-            currentNote.updatedAt = new Date().toISOString();
-            
-            try {
-                const filePath = path.join(notesDir, currentNote.id + '.json');
-                fs.writeFileSync(filePath, JSON.stringify(currentNote, null, 2));
-                
-                // Update in array
-                const index = notes.findIndex(n => n.id === currentNote.id);
-                if (index >= 0) {
-                    notes[index] = currentNote;
-                }
-                
-                updateNotesList();
-                viewNote(currentNote.id); // Refresh viewer
-                closeMoveNoteModal();
-                showAlert('✅ Success', 'Note moved successfully!');
-            } catch (error) {
-                showAlert('❌ Error', 'Error moving note: ' + error.message);
-            }
-        }
-        
-        function closeMoveNoteModal() {
-            document.getElementById('moveNoteModal').style.display = 'none';
-        }
-        
-        let currentNote = null;
-        
-        function viewNote(noteId) {
-            currentNote = notes.find(note => note.id === noteId);
-            if (currentNote) {
-                document.getElementById('welcomeScreen').style.display = 'none';
-                document.getElementById('editor').style.display = 'none';
-                document.getElementById('viewer').style.display = 'flex';
-                
-                document.getElementById('viewerTitle').textContent = currentNote.title;
-                document.getElementById('viewerMeta').innerHTML = `
-                    <span>Category: ${currentNote.category}</span> • 
-                    <span>Created: ${new Date(currentNote.createdAt).toLocaleString()}</span> • 
-                    <span>Updated: ${new Date(currentNote.updatedAt).toLocaleString()}</span>
-                    ${currentNote.tags && currentNote.tags.length > 0 ? `<br><span style="color: #ffc107;">🏷️ ${currentNote.tags.map(tag => '#' + tag).join(' ')}</span>` : ''}
-                    ${currentNote.description ? `<br><span style="color: #4a9eff; font-style: italic;">📝 ${currentNote.description}</span>` : ''}
-                `;
-                
-                // Process note links and set content
-                const processedContent = processNoteLinks(currentNote.content || '');
-                document.getElementById('viewerContent').innerHTML = processedContent || '<em>No content</em>';
-                
-                // Store original content for search functionality
-                originalContent = document.getElementById('viewerContent').innerHTML;
-            }
-        }
-        
-        function editNote() {
-            if (currentNote) {
-                document.getElementById('viewer').style.display = 'none';
-                document.getElementById('editor').style.display = 'flex';
-                
-                document.getElementById('noteTitle').value = currentNote.title;
-                document.getElementById('noteContent').innerHTML = currentNote.content || '';
-                document.getElementById('noteCategory').value = currentNote.category;
-                document.getElementById('noteTags').value = currentNote.tags && currentNote.tags.length > 0 ? currentNote.tags.map(tag => '#' + tag).join(' ') : '';
-                document.getElementById('noteDescription').value = currentNote.description;
-                
-                // Focus the content editor
-                setTimeout(() => {
-                    document.getElementById('noteContent').focus();
-                }, 100);
-            }
-        }
-        
-        async function deleteNote() {
-            if (!currentNote) return;
-            
-            showConfirm(
-                'Delete Note',
-                `<div class="delete-warning">
-                    <div class="warning-icon">🗑️</div>
-                    <div class="warning-text">
-                        <strong>Delete "${currentNote.title}"?</strong>
-                        <p>This note will be permanently deleted and cannot be recovered.</p>
-                        <div style="margin-top: 1rem; padding: 0.5rem; background: #333; border-radius: 4px;">
-                            <div style="font-size: 0.85rem; color: #bbb;">Category: ${currentNote.category}</div>
-                            <div style="font-size: 0.85rem; color: #bbb;">Created: ${new Date(currentNote.createdAt).toLocaleDateString()}</div>
-                        </div>
-                    </div>
-                </div>`,
-                async () => {
-                    try {
-                        await ipcRenderer.invoke('db-delete-note', currentNote.id);
-                        notes = await ipcRenderer.invoke('db-get-notes');
-                        
-                        // Update UI
-                        updateNotesList();
-                        
-                        // Go back to welcome screen
-                        document.getElementById('viewer').style.display = 'none';
-                        document.getElementById('welcomeScreen').style.display = 'flex';
-                        
-                        currentNote = null;
-                        showAlert('🗑️ Deleted', 'Note deleted successfully!');
-                    } catch (error) {
-                        showAlert('❌ Error', 'Error deleting note: ' + error.message);
-                    }
-                },
-                'Delete Note',
-                '🗑️'
-            );
-        }
-        
-        // Modal functions
-        function showAlert(title, message, callback) {
-            document.getElementById('alertTitle').textContent = title;
-            document.getElementById('alertMessage').textContent = message;
-            document.getElementById('alertModal').style.display = 'flex';
-            
-            // Store callback for when OK is clicked
-            window.alertCallback = callback;
-        }
-        
-        function closeAlert() {
-            document.getElementById('alertModal').style.display = 'none';
-            
-            // Execute callback if provided
-            if (window.alertCallback) {
-                window.alertCallback();
-                window.alertCallback = null;
-            }
-        }
-        
-        // Enhanced confirmation modal
-        function showConfirm(title, message, onConfirm, confirmText = 'Confirm', icon = '⚠️') {
-            document.getElementById('confirmTitle').innerHTML = `${icon} ${title}`;
-            document.getElementById('confirmMessage').innerHTML = message;
-            document.getElementById('confirmYesBtn').textContent = confirmText;
-            document.getElementById('confirmYesBtn').onclick = () => {
-                closeConfirmModal();
-                onConfirm();
-            };
-            document.getElementById('confirmModal').style.display = 'flex';
-        }
-        
-        function closeConfirmModal() {
-            document.getElementById('confirmModal').style.display = 'none';
-        }
-        
-        function createNewCategory() {
-            editingCategory = null;
-            document.getElementById('categoryNameInput').value = '';
-            document.getElementById('categoryColorInput').value = '#4a9eff';
-            
-            const buildHierarchicalOptions = (parentName = null, level = 0) => {
-                const children = categories.filter(cat => cat.parent === parentName);
-                let options = '';
-                
-                children.forEach(cat => {
-                    const indent = '\u00A0\u00A0\u00A0'.repeat(level);
-                    options += `<option value="${cat.name}">${indent}${cat.name}</option>`;
-                    options += buildHierarchicalOptions(cat.name, level + 1);
-                });
-                
-                return options;
-            };
-            
-            let parentOptions = '<option value="">No parent (root category)</option>';
-            parentOptions += buildHierarchicalOptions();
-            document.getElementById('parentCategoryInput').innerHTML = parentOptions;
-            
-            document.getElementById('categoryModal').style.display = 'flex';
-            document.getElementById('categoryNameInput').focus();
-        }
-        
-        function closeCategoryModal() {
-            document.getElementById('categoryModal').style.display = 'none';
-            document.getElementById('categoryNameInput').value = '';
-            document.getElementById('categoryColorInput').value = '#4a9eff';
-        }
-        
-        async function saveCategoryModal() {
-            const categoryName = document.getElementById('categoryNameInput').value.trim();
-            const parentCategory = document.getElementById('parentCategoryInput').value || null;
-            const color = document.getElementById('categoryColorInput').value;
-            
-            if (categoryName) {
-                if (!categories.find(cat => cat.name.toLowerCase() === categoryName.toLowerCase())) {
-                    try {
-                        await ipcRenderer.invoke('db-add-category', categoryName, color, parentCategory);
-                        categories = await ipcRenderer.invoke('db-get-categories');
-                        updateCategorySelector();
-                        closeCategoryModal();
-                        showAlert('✅ Success', 'Category "' + categoryName + '" created!');
-                    } catch (error) {
-                        showAlert('❌ Error', 'Error saving category: ' + error.message);
-                    }
-                } else {
-                    showAlert('⚠️ Warning', `A category named "${categoryName}" already exists. Please choose a different name.`);
-                }
-            } else {
-                showAlert('⚠️ Warning', 'Please enter a category name.');
-            }
-        }
-        
-        function manageCategories() {
-            document.getElementById('manageCategoriesModal').style.display = 'flex';
-            renderCategoriesList();
-        }
-        
-        function closeManageCategoriesModal() {
-            document.getElementById('manageCategoriesModal').style.display = 'none';
-        }
-        
-        function deleteCategory(categoryName, fromContextMenu = false) {
-            if (!fromContextMenu) {
-                closeManageCategoriesModal();
-            }
-            
-            const noteCount = notes.filter(note => note.category === categoryName).length;
-            const childCategories = categories.filter(cat => cat.parent === categoryName);
-            const affectedNotes = notes.filter(note => note.category === categoryName);
-            
-            let messageHtml = `
-                <div class="delete-warning">
-                    <div class="warning-icon">⚠️</div>
-                    <div class="warning-text">
-                        <strong>Delete "${categoryName}" category?</strong>
-                        <p>This action cannot be undone.</p>
-                    </div>
-                </div>
-                
-                <div class="impact-details">
-            `;
-            
-            if (noteCount > 0) {
-                messageHtml += `
-                    <div class="impact-item notes-impact">
-                        <div class="impact-icon">📝</div>
-                        <div class="impact-content">
-                            <strong>${noteCount} note${noteCount > 1 ? 's' : ''} will be moved to "General"</strong>
-                            <div class="affected-notes">
-                                ${affectedNotes.slice(0, 3).map(note => `<span class="note-title">• ${note.title}</span>`).join('')}
-                                ${noteCount > 3 ? `<span class="more-notes">... and ${noteCount - 3} more</span>` : ''}
+
+                    <div class="import-dropzone" id="importDropzone" onclick="document.getElementById('importFileInput').click()">
+                        <div class="dropzone-content">
+                            <div class="dropzone-icon">📁</div>
+                            <div class="dropzone-text">
+                                <strong>Drop files here or click to browse</strong>
+                                <span>Supports: JSON, Markdown (.md), Text (.txt)</span>
                             </div>
                         </div>
+                        <input type="file" id="importFileInput" multiple accept=".json,.md,.txt,.markdown" style="display: none;">
                     </div>
-                `;
-            }
-            
-            if (childCategories.length > 0) {
-                messageHtml += `
-                    <div class="impact-item subcategories-impact">
-                        <div class="impact-icon">📁</div>
-                        <div class="impact-content">
-                            <strong>${childCategories.length} subcategor${childCategories.length > 1 ? 'ies' : 'y'} will become root categor${childCategories.length > 1 ? 'ies' : 'y'}</strong>
-                            <div class="affected-categories">
-                                ${childCategories.map(cat => `<span class="category-name" style="color: ${cat.color}">• ${cat.name}</span>`).join('')}
+
+                    <div class="import-options-panel" id="importOptionsPanel" style="display: none;">
+                        <div class="import-settings">
+                            <div class="setting-group">
+                                <label class="setting-label">
+                                    <span class="setting-icon">📁</span>
+                                    <span>Category:</span>
+                                </label>
+                                <select id="importCategorySelect" class="setting-select">
+                                    <option value="">Select category...</option>
+                                </select>
+                            </div>
+
+                            <div class="setting-group">
+                                <label class="setting-label">
+                                    <span class="setting-icon">🏷️</span>
+                                    <span>Additional tags:</span>
+                                </label>
+                                <input type="text" id="importTagsInput" class="setting-input" placeholder="e.g., imported, backup">
+                                <small style="color: var(--text-secondary); font-size: 0.75rem; margin-top: 0.25rem; display: block;">
+                                    📝 Tags from #hashtags in content will be auto-extracted
+                                </small>
+                            </div>
+
+                            <div class="setting-group">
+                                <label class="setting-checkbox">
+                                    <input type="checkbox" id="skipDuplicates" checked>
+                                    <span class="checkmark"></span>
+                                    <span>Skip duplicates</span>
+                                </label>
                             </div>
                         </div>
-                    </div>
-                `;
-            }
-            
-            if (noteCount === 0 && childCategories.length === 0) {
-                messageHtml += `
-                    <div class="impact-item safe-delete">
-                        <div class="impact-icon">✅</div>
-                        <div class="impact-content">
-                            <strong>Safe to delete</strong>
-                            <p>This category is empty and has no subcategories.</p>
+
+                        <div class="import-preview" id="importPreview">
+                            <h4>📋 Files to Import</h4>
+                            <div class="preview-list" id="previewList"></div>
+                        </div>
+
+                        <div class="import-actions">
+                            <button class="import-btn cancel" onclick="cancelImport()">Cancel</button>
+                            <button class="import-btn primary" onclick="startImport()" id="startImportBtn">
+                                <span class="btn-icon">📥</span>
+                                <span class="btn-text">Import Notes</span>
+                            </button>
                         </div>
                     </div>
-                `;
-            }
-            
-            messageHtml += '</div>';
-            
-            document.getElementById('deleteCategoryMessage').innerHTML = messageHtml;
-            document.getElementById('confirmDeleteBtn').onclick = () => confirmDeleteCategory(categoryName, fromContextMenu);
-            document.getElementById('deleteCategoryModal').style.display = 'flex';
-        }
-        
-        async function confirmDeleteCategory(categoryName, fromContextMenu = false) {
-            try {
-                await ipcRenderer.invoke('db-delete-category', categoryName);
-                categories = await ipcRenderer.invoke('db-get-categories');
-                notes = await ipcRenderer.invoke('db-get-notes');
-                updateCategorySelector();
-                updateNotesList();
-                renderCategoriesList();
-                closeDeleteCategoryModal();
-                if (fromContextMenu) {
-                    showAlert('✅ Success', 'Category deleted successfully.');
-                } else {
-                    showAlert('✅ Success', 'Category deleted successfully.', () => {
-                        document.getElementById('manageCategoriesModal').style.display = 'flex';
-                    });
-                }
-            } catch (error) {
-                showAlert('❌ Error', 'Error deleting category: ' + error.message);
-            }
-        }
-        
-        function closeDeleteCategoryModal() {
-            document.getElementById('deleteCategoryModal').style.display = 'none';
-        }
-        
-        function renderCategoriesList() {
-            const categoriesList = document.getElementById('categoriesList');
-            
-            categoriesList.innerHTML = categories.map(cat => {
-                const noteCount = notes.filter(note => note.category === cat.name).length;
-                return `
-                    <div class="category-item" style="border-left-color: ${cat.color};">
-                        <div class="category-info">
-                            <span>${cat.name}</span>
-                            <span style="color: #888;">(${cat.color}) - ${noteCount} notes</span>
+
+                    <div class="import-progress" id="importProgress" style="display: none;">
+                        <div class="progress-header">
+                            <h4>⏳ Importing Notes...</h4>
+                            <span class="progress-text" id="progressText">0 of 0 files</span>
                         </div>
-                        ${cat.name !== 'General' ? 
-                            `<button class="category-delete" onclick="deleteCategory('${cat.name}')">
-                                <span>🗑️</span>
-                                <span>Delete</span>
-                            </button>` : 
-                            '<span style="color: #888;">Default</span>'
-                        }
+                        <div class="progress-bar">
+                            <div class="progress-fill" id="progressFill"></div>
+                        </div>
+                        <div class="progress-details" id="progressDetails"></div>
                     </div>
-                `;
-            }).join('');
-        }
-        
+                </div>
+            </div>
 
-        
-        const defaultTemplates = {
-            meeting: {
-                title: 'Meeting Notes - {date}',
-                content: `<h2>Meeting: [Topic]</h2>
-<p><strong>Date:</strong> {date}</p>
-<p><strong>Attendees:</strong></p>
-<ul><li></li></ul>
+            <!-- Export Tab -->
+            <div id="exportTab" class="import-export-tab-content" style="display: none;">
+                <div class="export-section">
+                    <div class="export-header">
+                        <h4>📤 Export Notes</h4>
+                        <p>Choose what to export and in which format</p>
+                    </div>
 
-<h3>Agenda</h3>
-<ul><li></li></ul>
+                    <div class="export-options">
+                        <div class="export-scope-group">
+                            <h4>What to export:</h4>
+                            <div class="scope-options">
+                                <label class="scope-option">
+                                    <input type="radio" name="exportScope" value="current" checked>
+                                    <span class="scope-icon">📄</span>
+                                    <span>Current note</span>
+                                </label>
+                                <label class="scope-option">
+                                    <input type="radio" name="exportScope" value="category">
+                                    <span class="scope-icon">📁</span>
+                                    <span>Current category</span>
+                                </label>
+                                <label class="scope-option">
+                                    <input type="radio" name="exportScope" value="all">
+                                    <span class="scope-icon">📚</span>
+                                    <span>All notes</span>
+                                </label>
+                            </div>
+                        </div>
 
-<h3>Discussion Points</h3>
-<ul><li></li></ul>
+                        <div class="export-format-group">
+                            <h4>Export format:</h4>
+                            <div class="format-options">
+                                <label class="format-option">
+                                    <input type="radio" name="exportFormat" value="json" checked>
+                                    <span class="format-icon">🔧</span>
+                                    <div class="format-info">
+                                        <span>JSON</span>
+                                        <small>MindKeep format</small>
+                                    </div>
+                                </label>
+                                <label class="format-option">
+                                    <input type="radio" name="exportFormat" value="markdown">
+                                    <span class="format-icon">📝</span>
+                                    <div class="format-info">
+                                        <span>Markdown</span>
+                                        <small>Universal format</small>
+                                    </div>
+                                </label>
+                                <label class="format-option">
+                                    <input type="radio" name="exportFormat" value="text">
+                                    <span class="format-icon">📄</span>
+                                    <div class="format-info">
+                                        <span>Plain Text</span>
+                                        <small>Simple format</small>
+                                    </div>
+                                </label>
+                            </div>
+                        </div>
 
-<h3>Action Items</h3>
-<ul><li>[ ] </li></ul>
-
-<h3>Next Steps</h3>
-<p></p>`,
-                tags: ['meeting', 'work'],
-                displayName: 'Meeting Notes',
-                isDefault: true
-            },
-            daily: {
-                title: 'Daily Journal - {date}',
-                content: `<h2>{date}</h2>
-
-<h3>Today's Goals</h3>
-<ul><li>[ ] </li></ul>
-
-<h3>What Happened</h3>
-<p></p>
-
-<h3>Thoughts & Reflections</h3>
-<p></p>
-
-<h3>Tomorrow's Focus</h3>
-<ul><li></li></ul>`,
-                tags: ['journal', 'daily'],
-                displayName: 'Daily Journal',
-                isDefault: true
-            },
-            project: {
-                title: 'Project: [Name]',
-                content: `<h2>Project Overview</h2>
-<p><strong>Start Date:</strong> {date}</p>
-<p><strong>Deadline:</strong></p>
-<p><strong>Status:</strong> Planning</p>
-
-<h3>Objectives</h3>
-<ul><li></li></ul>
-
-<h3>Requirements</h3>
-<ul><li></li></ul>
-
-<h3>Tasks</h3>
-<ul><li>[ ] </li></ul>
-
-<h3>Resources</h3>
-<ul><li></li></ul>
-
-<h3>Notes</h3>
-<p></p>`,
-                tags: ['project', 'planning'],
-                displayName: 'Project Plan',
-                isDefault: true
-            },
-            todo: {
-                title: 'To-Do List - {date}',
-                content: `<h2>Tasks for {date}</h2>
-
-<h3>High Priority</h3>
-<ul><li>[ ] </li></ul>
-
-<h3>Medium Priority</h3>
-<ul><li>[ ] </li></ul>
-
-<h3>Low Priority</h3>
-<ul><li>[ ] </li></ul>
-
-<h3>Completed</h3>
-<ul><li>[x] </li></ul>`,
-                tags: ['todo', 'tasks'],
-                displayName: 'To-Do List',
-                isDefault: true
-            },
-            research: {
-                title: 'Research: [Topic]',
-                content: `<h2>Research Topic</h2>
-<p><strong>Date:</strong> {date}</p>
-<p><strong>Purpose:</strong></p>
-
-<h3>Key Questions</h3>
-<ul><li></li></ul>
-
-<h3>Sources</h3>
-<ul><li></li></ul>
-
-<h3>Findings</h3>
-<p></p>
-
-<h3>Conclusions</h3>
-<p></p>
-
-<h3>Next Steps</h3>
-<ul><li></li></ul>`,
-                tags: ['research', 'study'],
-                displayName: 'Research Notes',
-                isDefault: true
-            },
-            blank: {
-                title: '',
-                content: '',
-                tags: [],
-                displayName: 'Blank Note',
-                isDefault: true
-            }
-        };
-        
-        let templates = { ...defaultTemplates };
-        
-        function showTemplateModal() {
-            updateTemplateList();
-            document.getElementById('templateModal').style.display = 'flex';
-        }
-        
-        function updateTemplateList() {
-            const templateList = document.getElementById('templateList');
-            const templateIcons = {
-                meeting: '💼',
-                daily: '📅',
-                project: '📁',
-                todo: '✅',
-                research: '🔍',
-                blank: '📄'
-            };
-            
-            templateList.innerHTML = Object.keys(templates).map(key => {
-                const template = templates[key];
-                const icon = templateIcons[key] || template.icon || '📄';
-                return `
-                    <div class="template-item" onclick="createFromTemplate('${key}')">
-                        <span class="template-icon">${icon}</span>
-                        <span class="template-name">${template.displayName || key}</span>
-                        <div class="template-actions">
-                            <button class="template-edit-btn" onclick="editTemplate('${key}'); event.stopPropagation();" title="Edit template">✏️</button>
-                            <button class="template-delete-btn" onclick="deleteTemplate('${key}'); event.stopPropagation();" title="Delete template">🗑️</button>
+                        <div class="export-actions">
+                            <button class="export-btn primary" onclick="exportNotes()">
+                                <span class="btn-icon">📤</span>
+                                <span class="btn-text">Export Notes</span>
+                            </button>
                         </div>
                     </div>
-                `;
-            }).join('');
-        }
-        
-        function closeTemplateModal() {
-            document.getElementById('templateModal').style.display = 'none';
-        }
-        
-        function showAddTemplateForm() {
-            editingTemplateKey = null;
-            document.querySelector('#addTemplateModal h3').textContent = '➕ Create Template';
-            document.querySelector('#addTemplateModal .modal-btn.save').textContent = 'Save Template';
-            
-            document.getElementById('templateNameInput').value = '';
-            document.getElementById('templateIconInput').value = '';
-            document.getElementById('templateTitleInput').value = '';
-            document.getElementById('templateContentInput').value = '';
-            
-            document.getElementById('templateModal').style.display = 'none';
-            document.getElementById('addTemplateModal').style.display = 'flex';
-            document.getElementById('templateNameInput').focus();
-        }
-        
-        function closeAddTemplateModal() {
-            document.getElementById('addTemplateModal').style.display = 'none';
-            document.getElementById('templateNameInput').value = '';
-            document.getElementById('templateIconInput').value = '';
-            document.getElementById('templateTitleInput').value = '';
-            document.getElementById('templateContentInput').value = '';
-        }
-        
-        function saveTemplate() {
-            const name = document.getElementById('templateNameInput').value.trim();
-            const icon = document.getElementById('templateIconInput').value.trim() || '📄';
-            const title = document.getElementById('templateTitleInput').value.trim();
-            const content = document.getElementById('templateContentInput').value.trim();
-            
-            if (!name) {
-                showAlert('⚠️ Warning', 'Please enter a template name.');
-                return;
-            }
-            
-            const isEditing = editingTemplateKey !== null;
-            const templateKey = isEditing ? editingTemplateKey : name.toLowerCase().replace(/\s+/g, '_');
-            
-            templates[templateKey] = {
-                title: title || name,
-                content: content,
-                tags: templates[templateKey]?.tags || [],
-                displayName: name,
-                icon: icon,
-                isDefault: templates[templateKey]?.isDefault || false
-            };
-            
-            closeAddTemplateModal();
-            const action = isEditing ? 'updated' : 'created';
-            showAlert('✅ Success', `Template "${name}" ${action}!`, () => {
-                showTemplateModal();
-            });
-            
-            editingTemplateKey = null;
-        }
-        
-        function deleteTemplate(templateKey) {
-            const template = templates[templateKey];
-            if (template) {
-                closeTemplateModal();
-                showConfirm(
-                    'Delete Template',
-                    `<div class="delete-warning">
-                        <div class="warning-icon">🗑️</div>
-                        <div class="warning-text">
-                            <strong>Delete "${template.displayName || template.title}" template?</strong>
-                            <p>This template will be permanently removed.</p>
-                        </div>
-                    </div>`,
-                    () => {
-                        delete templates[templateKey];
-                        showAlert('✅ Success', 'Template deleted!', () => {
-                            showTemplateModal();
-                        });
-                    },
-                    'Delete Template',
-                    '🗑️'
-                );
-                
-                // Override cancel to return to template modal
-                const originalCancel = document.getElementById('confirmModal').querySelector('.modal-btn.cancel').onclick;
-                document.getElementById('confirmModal').querySelector('.modal-btn.cancel').onclick = () => {
-                    closeConfirmModal();
-                    showTemplateModal();
-                };
-            }
-        }
-        
-        function resetTemplates() {
-            closeTemplateModal();
-            showConfirm(
-                'Reset Templates',
-                `<div class="delete-warning">
-                    <div class="warning-text">
-                        <strong>Reset all templates to defaults?</strong>
-                        <p>This will remove all custom templates and restore the original ones.</p>
-                    </div>
-                </div>`,
-                () => {
-                    templates = { ...defaultTemplates };
-                    showAlert('✅ Success', 'Templates reset to defaults!', () => {
-                        showTemplateModal();
-                    });
-                },
-                'Reset Templates',
-                '🔄'
-            );
-            
-            // Override cancel to return to template modal
-            const originalCancel = document.getElementById('confirmModal').querySelector('.modal-btn.cancel').onclick;
-            document.getElementById('confirmModal').querySelector('.modal-btn.cancel').onclick = () => {
-                closeConfirmModal();
-                showTemplateModal();
-            };
-        }
-        
-        let editingTemplateKey = null;
-        
-        function editTemplate(templateKey) {
-            const template = templates[templateKey];
-            if (template) {
-                editingTemplateKey = templateKey;
-                
-                document.getElementById('templateEditorName').value = template.displayName || template.title || templateKey;
-                document.getElementById('templateEditorIcon').value = template.icon || '';
-                document.getElementById('templateEditorTitle').value = template.title || '';
-                document.getElementById('templateEditorContent').innerHTML = template.content || '';
-                
-                closeTemplateModal();
-                document.getElementById('templateEditorModal').style.display = 'flex';
-                document.getElementById('templateEditorName').focus();
-            }
-        }
-        
-        function closeTemplateEditor() {
-            document.getElementById('templateEditorModal').style.display = 'none';
-            editingTemplateKey = null;
-            showTemplateModal();
-        }
-        
-        function saveTemplateEditor() {
-            const name = document.getElementById('templateEditorName').value.trim();
-            const icon = document.getElementById('templateEditorIcon').value.trim() || '📄';
-            const title = document.getElementById('templateEditorTitle').value.trim();
-            const content = document.getElementById('templateEditorContent').innerHTML;
-            
-            if (!name) {
-                showAlert('⚠️ Warning', 'Please enter a template name.');
-                return;
-            }
-            
-            const templateKey = editingTemplateKey;
-            
-            templates[templateKey] = {
-                title: title || name,
-                content: content,
-                tags: templates[templateKey]?.tags || [],
-                displayName: name,
-                icon: icon,
-                isDefault: templates[templateKey]?.isDefault || false
-            };
-            
-            closeTemplateEditor();
-            showAlert('✅ Success', `Template "${name}" updated!`, () => {
-                showTemplateModal();
-            });
-            
-            editingTemplateKey = null;
-        }
-        
-        function formatTemplateText(command) {
-            document.execCommand(command, false, null);
-            document.getElementById('templateEditorContent').focus();
-        }
-        
-        function formatTemplateHeading(tag) {
-            document.execCommand('formatBlock', false, tag);
-            document.getElementById('templateEditorContent').focus();
-        }
-        
-        function insertTemplatePlaceholder() {
-            document.execCommand('insertHTML', false, '{date}');
-            document.getElementById('templateEditorContent').focus();
-        }
-        
-        function createFromTemplate(templateType) {
-            const template = templates[templateType];
-            const today = new Date().toLocaleDateString();
-            
-            currentNote = null;
-            document.getElementById('welcomeScreen').style.display = 'none';
-            document.getElementById('viewer').style.display = 'none';
-            document.getElementById('editor').style.display = 'flex';
-            
-            document.getElementById('noteTitle').value = template.title.replace('{date}', today);
-            document.getElementById('noteContent').innerHTML = template.content.replace(/{date}/g, today);
-            document.getElementById('noteCategory').value = '';
-            document.getElementById('noteTags').value = template.tags.join(', ');
-            document.getElementById('noteDescription').value = '';
-            
-            closeTemplateModal();
-            
-            setTimeout(() => {
-                document.getElementById('noteContent').focus();
-            }, 100);
-        }
-        
-        function createNewNote() {
-            createFromTemplate('blank');
-        }
-        
-        let blockCounter = 0;
-        
-        let selectedBlock = null;
-        let clickPosition = null;
-        
-        function createBlockAtClick(event) {
-            if (event.target.classList.contains('content-grid')) {
-                const grid = document.getElementById('noteContent');
-                const rect = grid.getBoundingClientRect();
-                clickPosition = {
-                    x: event.clientX - rect.left,
-                    y: event.clientY - rect.top
-                };
-                
-                if (selectedBlock) {
-                    selectedBlock.classList.remove('selected');
-                }
-                selectedBlock = null;
-            }
-        }
-        
-        function createBlockOnType() {
-            if (clickPosition && !selectedBlock) {
-                const grid = document.getElementById('noteContent');
-                const block = document.createElement('div');
-                block.className = 'note-block selected';
-                block.style.left = clickPosition.x + 'px';
-                block.style.top = clickPosition.y + 'px';
-                block.innerHTML = `<textarea oninput="autoResize(this); saveBlockContent(this)" onkeydown="handleBlockKeyDown(event)" onclick="selectBlock(this.parentElement); event.stopPropagation()"></textarea>`;
-                grid.appendChild(block);
-                makeDraggable(block);
-                selectedBlock = block;
-                clickPosition = null;
-                return block.querySelector('textarea');
-            }
-            return null;
-        }
-        
-        function autoResize(textarea) {
-            textarea.style.height = 'auto';
-            textarea.style.height = textarea.scrollHeight + 'px';
-            textarea.style.width = Math.max(100, textarea.value.length * 8 + 20) + 'px';
-        }
-        
-        function selectBlock(block) {
-            if (selectedBlock) {
-                selectedBlock.classList.remove('selected');
-            }
-            selectedBlock = block;
-            block.classList.add('selected');
-            block.querySelector('textarea').focus();
-        }
-        
-        function handleBlockKeyDown(event) {
-            if ((event.key === 'Delete' || event.key === 'Backspace') && event.target.value === '') {
-                if (selectedBlock) {
-                    selectedBlock.remove();
-                    selectedBlock = null;
-                }
-                event.preventDefault();
-            }
-        }
-        
-        function handleKeyDown(event) {
-            if (!selectedBlock && clickPosition) {
-                const textarea = createBlockOnType();
-                if (textarea) {
-                    textarea.value = event.key;
-                    autoResize(textarea);
-                    event.preventDefault();
-                }
-            }
-        }
-        
-        function deleteBlock(btn) {
-            btn.closest('.note-block').remove();
-        }
-        
-        function saveBlockContent(textarea) {
-            // Auto-save functionality can be added here
-        }
-        
-        function makeDraggable(element) {
-            let pos1 = 0, pos2 = 0, pos3 = 0, pos4 = 0;
-            element.onmousedown = dragMouseDown;
-            
-            function dragMouseDown(e) {
-                e = e || window.event;
-                if (e.target.tagName === 'TEXTAREA') return;
-                e.preventDefault();
-                pos3 = e.clientX;
-                pos4 = e.clientY;
-                document.onmouseup = closeDragElement;
-                document.onmousemove = elementDrag;
-            }
-            
-            function elementDrag(e) {
-                e = e || window.event;
-                e.preventDefault();
-                pos1 = pos3 - e.clientX;
-                pos2 = pos4 - e.clientY;
-                pos3 = e.clientX;
-                pos4 = e.clientY;
-                element.style.top = (element.offsetTop - pos2) + "px";
-                element.style.left = (element.offsetLeft - pos1) + "px";
-            }
-            
-            function closeDragElement() {
-                document.onmouseup = null;
-                document.onmousemove = null;
-            }
-        }
-        
-        async function saveCurrentNote() {
-            const title = document.getElementById('noteTitle').value || 'Untitled';
-            const content = document.getElementById('noteContent').innerHTML;
-            const category = document.getElementById('noteCategory').value || 'General';
-            let tagsInput = document.getElementById('noteTags').value.trim();
-            let tags = [];
-            if (tagsInput) {
-                if (tagsInput.includes('#')) {
-                    // Handle #tag1 #tag2 format
-                    tags = tagsInput.split(/\s+/).map(t => t.replace('#', '').trim()).filter(t => t);
-                } else {
-                    // Handle comma-separated format
-                    tags = tagsInput.split(',').map(t => t.trim()).filter(t => t);
-                }
-            }
-            const description = document.getElementById('noteDescription').value;
-            
-            // Check for duplicate note title
-            const existingNote = notes.find(note => 
-                note.title.toLowerCase() === title.toLowerCase() && 
-                (!currentNote || note.id !== currentNote.id)
-            );
-            
-            if (existingNote) {
-                showAlert('⚠️ Warning', `A note with the title "${title}" already exists. Please choose a different title.`);
-                return;
-            }
-            
-            let note;
-            if (currentNote) {
-                // Editing existing note
-                note = {
-                    ...currentNote,
-                    title: title,
-                    content: content,
-                    category: category,
-                    tags: tags,
-                    description: description,
-                    updatedAt: new Date().toISOString()
-                };
-            } else {
-                // Creating new note
-                note = {
-                    id: Date.now().toString(),
-                    title: title,
-                    content: content,
-                    category: category,
-                    tags: tags,
-                    description: description,
-                    createdAt: new Date().toISOString(),
-                    updatedAt: new Date().toISOString()
-                };
-            }
-            
-            try {
-                await ipcRenderer.invoke('db-save-note', note);
-                notes = await ipcRenderer.invoke('db-get-notes');
-                
-                currentNote = note;
-                updateNotesList();
-                
-                document.getElementById('editor').style.display = 'none';
-                document.getElementById('viewer').style.display = 'flex';
-                
-                // Update viewer with processed links
-                viewNote(note.id);
-                
-                // Also update the notes list to refresh any links there
-                updateNotesList();
-                
-                showAlert('✅ Success', 'Note "' + title + '" saved!');
-            } catch (error) {
-                showAlert('❌ Error', 'Error saving note: ' + error.message);
-            }
-        }
-        
-        function cancelEdit() {
-            document.getElementById('editor').style.display = 'none';
-            if (currentNote) {
-                document.getElementById('viewer').style.display = 'flex';
-            } else {
-                document.getElementById('welcomeScreen').style.display = 'flex';
-            }
-        }
-        
-        function showWelcomeScreen() {
-            document.getElementById('viewer').style.display = 'none';
-            document.getElementById('editor').style.display = 'none';
-            document.getElementById('welcomeScreen').style.display = 'flex';
-            currentNote = null;
-            selectCategory('all'); // Resets view to all notes
-        }
-        
-        let currentVersion = 'Unknown';
-        let latestVersion = 'Unknown';
-        
-        // Get current version from main process
-        async function getCurrentVersion() {
-            try {
-                currentVersion = await ipcRenderer.invoke('get-app-version');
-                return currentVersion;
-            } catch (error) {
-                console.error('Error getting app version:', error);
-                return 'Unknown';
-            }
-        }
-        
-        // Setup IPC listeners for update events
-        ipcRenderer.on('update-checking', () => {
-            document.getElementById('updateBtn').textContent = 'Checking...';
-            document.getElementById('updateBtn').disabled = true;
-        });
-        
-        ipcRenderer.on('update-available', (event, version) => {
-            latestVersion = version;
-            document.getElementById('currentVersionText').textContent = currentVersion;
-            document.getElementById('latestVersionText').textContent = latestVersion;
-            document.getElementById('updateAvailableModal').style.display = 'flex';
-            document.getElementById('updateBtn').textContent = 'Check Updates';
-            document.getElementById('updateBtn').disabled = false;
-        });
-        
-        ipcRenderer.on('update-not-available', () => {
-            showAlert('✅ Up to Date', `You have the latest version! (${currentVersion})`);
-            document.getElementById('updateBtn').textContent = 'Check Updates';
-            document.getElementById('updateBtn').disabled = false;
-        });
-		
-		ipcRenderer.on('current-version', (event, version) => {
-            currentVersion = version; // Update currentVersion with the app's version
-        });
-        
-        ipcRenderer.on('update-error', (event, error) => {
-            showAlert('❌ Error', 'Update error: ' + error);
-            document.getElementById('updateBtn').textContent = 'Check Updates';
-            document.getElementById('updateBtn').disabled = false;
-        });
-        
-        ipcRenderer.on('update-progress', (event, percent) => {
-            document.getElementById('updateProgress').style.display = 'block';
-            document.getElementById('progressFill').style.width = percent + '%';
-            document.getElementById('progressText').textContent = `Downloading... ${Math.round(percent)}%`;
-        });
-        
-        ipcRenderer.on('update-downloaded', () => {
-            document.getElementById('updateProgress').style.display = 'none';
-            document.getElementById('installUpdateBtn').textContent = 'Restart & Install';
-            document.getElementById('installUpdateBtn').disabled = false;
-            showAlert('✅ Download Complete', 'Update downloaded! Click "Restart & Install" to apply the update.');
-        });
-        
-        async function checkForUpdates() {
-            await getCurrentVersion();
-            await ipcRenderer.invoke('check-for-updates');
-        }
-        
-        function closeUpdateAvailableModal() {
-            document.getElementById('updateAvailableModal').style.display = 'none';
-        }
-        
-        async function installUpdate() {
-            const installBtn = document.getElementById('installUpdateBtn');
-            installBtn.disabled = true;
-            installBtn.textContent = 'Installing...';
-            
-            await ipcRenderer.invoke('install-update');
-        }
-        
+                </div>
+            </div>
 
-        
-        // Initialize when page loads
-        document.addEventListener('DOMContentLoaded', function() {
-            initApp();
-            initSearchListeners();
-            setupNoteLinking();
-            setupNoteLinkClicks();
-        });
-        
-        // Listen for global shortcuts
-        ipcRenderer.on('shortcut-new-note', () => {
-            createNewNote();
-        });
-        
-        ipcRenderer.on('shortcut-focus-search', () => {
-            document.getElementById('searchInput').focus();
-            document.getElementById('searchInput').select();
-        });
-        
-        // Add search functionality
-        document.getElementById('searchInput').addEventListener('input', updateNotesList);
-        
-        // Rich text formatting functions
-        function formatText(command) {
-            document.execCommand(command, false, null);
-            document.getElementById('noteContent').focus();
-        }
-        
-        function formatHeading(tag) {
-            document.execCommand('formatBlock', false, tag);
-            document.getElementById('noteContent').focus();
-        }
-        
-        function formatCode() {
-            const selection = window.getSelection();
-            if (selection.toString()) {
-                document.execCommand('insertHTML', false, `<code>${selection.toString()}</code>`);
-            } else {
-                document.execCommand('insertHTML', false, '<code></code>');
-            }
-            document.getElementById('noteContent').focus();
-        }
-        
-        function highlightText() {
-            document.execCommand('hiliteColor', false, '#ffff00');
-            document.getElementById('noteContent').focus();
-        }
-        
-        function alignText(alignment) {
-            document.execCommand('justify' + alignment.charAt(0).toUpperCase() + alignment.slice(1), false, null);
-            document.getElementById('noteContent').focus();
-        }
-        
-        function undoRedo(action) {
-            document.execCommand(action, false, null);
-            document.getElementById('noteContent').focus();
-        }
-        
-        function insertLineBreak() {
-            document.execCommand('insertHTML', false, '<hr>');
-            document.getElementById('noteContent').focus();
-        }
-        
-        function formatCode() {
-            document.execCommand('insertHTML', false, '<code>code</code>');
-            document.getElementById('noteContent').focus();
-        }
-        
-        function formatCodeBlock() {
-            document.execCommand('insertHTML', false, '<pre><code></code></pre><p>&nbsp;</p>');
-            document.getElementById('noteContent').focus();
-        }
-        
-        function formatHeading(tag) {
-            document.execCommand('formatBlock', false, tag);
-            document.getElementById('noteContent').focus();
-        }
-        
+            <div class="modal-buttons">
+                <button onclick="closeExportModal()" class="modal-btn cancel">Close</button>
+            </div>
+        </div>
+    </div>
 
-        
-        // Search highlighting function
-        function highlightSearchTerm(text) {
-            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
-            if (!searchTerm) return text;
-            
-            const regex = new RegExp(`(${searchTerm})`, 'gi');
-            return text.replace(regex, '<mark style="background: #ffff00; color: #000;">$1</mark>');
-        }
-        
-        // Sorting function
-        async function changeSorting() {
-            const sortBy = document.getElementById('sortSelector').value;
-            notes = await ipcRenderer.invoke('db-get-notes-sorted', sortBy);
-            updateNotesList();
-        }
-        
-        // Pin toggle function
-        async function togglePin(noteId) {
-            try {
-                await ipcRenderer.invoke('db-toggle-pin-note', noteId);
-                notes = await ipcRenderer.invoke('db-get-notes');
-                updateNotesList();
-            } catch (error) {
-                showAlert('❌ Error', 'Error toggling pin: ' + error.message);
-            }
-        }
-        
-        // In-note search variables
-        let currentMatches = [];
-        let currentMatchIndex = -1;
-        let originalContent = '';
-        
-        // Floating search functions
-        function openInNoteSearch() {
-            const isViewer = document.getElementById('viewer').style.display !== 'none';
-            const isEditor = document.getElementById('editor').style.display !== 'none';
-            
-            if (isViewer || isEditor) {
-                const contentElement = isViewer ? document.getElementById('viewerContent') : document.getElementById('noteContent');
-                const floatingSearch = document.getElementById('floatingSearch');
-                const floatingSearchInput = document.getElementById('floatingSearchInput');
-                
-                if (contentElement && floatingSearch && floatingSearchInput) {
-                    originalContent = contentElement.innerHTML;
-                    floatingSearch.style.display = 'flex';
-                    floatingSearchInput.focus();
-                    floatingSearchInput.value = '';
-                    document.getElementById('floatingSearchResults').textContent = '';
-                }
-            }
-        }
-        
-        function closeFloatingSearch() {
-            const floatingSearch = document.getElementById('floatingSearch');
-            const floatingSearchInput = document.getElementById('floatingSearchInput');
-            const isViewer = document.getElementById('viewer').style.display !== 'none';
-            const contentElement = isViewer ? document.getElementById('viewerContent') : document.getElementById('noteContent');
-            
-            if (floatingSearch) floatingSearch.style.display = 'none';
-            if (floatingSearchInput) floatingSearchInput.value = '';
-            if (originalContent && contentElement) {
-                contentElement.innerHTML = originalContent;
-            }
-            document.getElementById('floatingSearchResults').textContent = '';
-            
-            currentMatches = [];
-            currentMatchIndex = -1;
-        }
-        
-        function navigateSearch(direction) {
-            const searchTerm = document.getElementById('floatingSearchInput').value;
-            if (!searchTerm) return;
-            
-            const isViewer = document.getElementById('viewer').style.display !== 'none';
-            const contentElement = isViewer ? document.getElementById('viewerContent') : document.getElementById('noteContent');
-            searchInContent(contentElement, searchTerm, direction, 'floatingSearchResults');
-        }
-        
-        function searchInContent(contentElement, searchTerm, direction, resultsId) {
-            if (!searchTerm) {
-                contentElement.innerHTML = originalContent;
-                currentMatches = [];
-                currentMatchIndex = -1;
-                document.getElementById(resultsId).textContent = '';
-                return;
-            }
-            
-            // If this is navigation, just update which match is current
-            if (direction && currentMatches.length > 0) {
-                if (direction === 'next') {
-                    currentMatchIndex = (currentMatchIndex + 1) % currentMatches.length;
-                } else if (direction === 'prev') {
-                    currentMatchIndex = currentMatchIndex <= 0 ? currentMatches.length - 1 : currentMatchIndex - 1;
-                }
-                
-                // Remove current highlighting
-                contentElement.querySelectorAll('.current-match').forEach(el => {
-                    el.className = 'search-match';
-                    el.removeAttribute('id');
-                });
-                
-                // Highlight new current match
-                const allMatches = contentElement.querySelectorAll('.search-match');
-                if (allMatches[currentMatchIndex]) {
-                    allMatches[currentMatchIndex].className = 'current-match';
-                    allMatches[currentMatchIndex].id = 'current-search-match';
-                    allMatches[currentMatchIndex].scrollIntoView({ behavior: 'smooth', block: 'center' });
-                }
-                
-                document.getElementById(resultsId).textContent = `${currentMatchIndex + 1} of ${currentMatches.length}`;
-                return;
-            }
-            
-            // Initial search
-            contentElement.innerHTML = originalContent;
-            
-            const textContent = contentElement.textContent || contentElement.innerText || '';
-            const escapedTerm = searchTerm.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-            const textMatches = [...textContent.matchAll(new RegExp(escapedTerm, 'gi'))];
-            
-            if (textMatches.length === 0) {
-                document.getElementById(resultsId).textContent = 'No matches';
-                return;
-            }
-            
-            currentMatches = textMatches;
-            currentMatchIndex = 0;
-            
-            // Get all text nodes and replace matches
-            const tempDiv = document.createElement('div');
-            tempDiv.innerHTML = originalContent;
-            
-            let matchIndex = 0;
-            const walker = document.createTreeWalker(
-                tempDiv,
-                NodeFilter.SHOW_TEXT
-            );
-            
-            const textNodes = [];
-            let node;
-            while (node = walker.nextNode()) {
-                textNodes.push(node);
-            }
-            
-            textNodes.forEach(textNode => {
-                const text = textNode.textContent;
-                if (new RegExp(escapedTerm, 'i').test(text)) {
-                    const highlightedText = text.replace(new RegExp(escapedTerm, 'gi'), (match) => {
-                        const className = matchIndex === 0 ? 'current-match' : 'search-match';
-                        const id = matchIndex === 0 ? 'current-search-match' : '';
-                        matchIndex++;
-                        return `<span class="${className}" ${id ? `id="${id}"` : ''}>${match}</span>`;
-                    });
-                    
-                    const wrapper = document.createElement('div');
-                    wrapper.innerHTML = highlightedText;
-                    
-                    while (wrapper.firstChild) {
-                        textNode.parentNode.insertBefore(wrapper.firstChild, textNode);
-                    }
-                    textNode.parentNode.removeChild(textNode);
-                }
-            });
-            
-            const highlightedHTML = tempDiv.innerHTML;
-            
-            contentElement.innerHTML = highlightedHTML;
-            
-            // Scroll to first match
-            const firstMatch = document.getElementById('current-search-match');
-            if (firstMatch) {
-                firstMatch.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            }
-            
-            document.getElementById(resultsId).textContent = `1 of ${textMatches.length}`;
-        }
-        
-        // Global keyboard shortcuts
-        document.addEventListener('keydown', function(e) {
-            // Only handle shortcuts if no modal is open
-            const modalsOpen = document.querySelectorAll('.modal[style*="flex"]').length > 0;
-            if (modalsOpen) return;
-            
-            const isViewer = document.getElementById('viewer').style.display !== 'none';
-            const isEditor = document.getElementById('editor').style.display !== 'none';
-            
-            // Ctrl+S - Save note
-            if (e.ctrlKey && e.key === 's') {
-                e.preventDefault();
-                if (isEditor) {
-                    saveCurrentNote();
-                }
-            }
-            
-            // Ctrl+N - New note
-            if (e.ctrlKey && e.key === 'n') {
-                e.preventDefault();
-                createNewNote();
-            }
-            
-            // Ctrl+F - Focus search or in-note search
-            if (e.ctrlKey && e.key === 'f') {
-                e.preventDefault();
-                if (isViewer || isEditor) {
-                    openInNoteSearch();
-                } else {
-                    document.getElementById('searchInput').focus();
-                    document.getElementById('searchInput').select();
-                }
-            }
-            
-            // Ctrl+R - Refresh/reload data
-            if (e.ctrlKey && e.key === 'r') {
-                e.preventDefault();
-                location.reload();
-            }
-            
-            // Escape - Close floating search
-            if (e.key === 'Escape') {
-                if (document.getElementById('floatingSearch').style.display !== 'none') {
-                    closeFloatingSearch();
-                }
-            }
-        });
-        
+    <!-- Backup Modal -->
+    <div id="backupModal" class="modal" style="display: none;">
+        <div class="modal-content backup-modal">
+            <h3>💾 Backup & Restore</h3>
+            <div class="backup-tabs">
+                <button class="backup-tab active" onclick="showBackupTab('manage')">Manage Backups</button>
+                <button class="backup-tab" onclick="showBackupTab('import')">Import/Export</button>
+            </div>
 
-        
-        // Initialize floating search listener
-        function initSearchListeners() {
-            const floatingSearchInput = document.getElementById('floatingSearchInput');
-            
-            if (floatingSearchInput) {
-                floatingSearchInput.addEventListener('input', function() {
-                    const searchTerm = this.value.trim();
-                    const isViewer = document.getElementById('viewer').style.display !== 'none';
-                    const contentElement = isViewer ? document.getElementById('viewerContent') : document.getElementById('noteContent');
-                    
-                    if (searchTerm && contentElement) {
-                        searchInContent(contentElement, searchTerm, null, 'floatingSearchResults');
-                    } else if (contentElement && originalContent) {
-                        contentElement.innerHTML = originalContent;
-                        document.getElementById('floatingSearchResults').textContent = '';
-                    }
-                });
-            }
-        }
-        
-        // Drag and drop functions
-        let draggedNoteId = null;
-        
-        function handleNoteDragStart(event) {
-            draggedNoteId = event.target.dataset.noteId;
-            event.target.classList.add('dragging');
-        }
-        
-        function handleNoteDragEnd(event) {
-            event.target.classList.remove('dragging');
-            draggedNoteId = null;
-        }
-        
-        function handleCategoryDragOver(event) {
-            event.preventDefault();
-            event.currentTarget.classList.add('drag-over');
-        }
-        
-        function handleCategoryDragLeave(event) {
-            event.currentTarget.classList.remove('drag-over');
-        }
-        
-        async function handleCategoryDrop(event, categoryName) {
-            event.preventDefault();
-            event.currentTarget.classList.remove('drag-over');
-            
-            if (draggedNoteId && categoryName) {
-                const note = notes.find(n => n.id === draggedNoteId);
-                if (note && note.category !== categoryName) {
-                    note.category = categoryName;
-                    note.updatedAt = new Date().toISOString();
-                    
-                    try {
-                        await ipcRenderer.invoke('db-save-note', note);
-                        notes = await ipcRenderer.invoke('db-get-notes');
-                        updateNotesList();
-                        updateCategorySelector();
-                        showAlert('✅ Success', `Note moved to ${categoryName}`);
-                    } catch (error) {
-                        showAlert('❌ Error', 'Error moving note: ' + error.message);
-                    }
-                }
-            }
-        }
-        
-        // Note linking improvements
-        let linkSuggestionDiv = null;
-        let selectedSuggestionIndex = -1;
-        let currentSuggestions = [];
-        
-        function setupNoteLinking() {
-            const noteContent = document.getElementById('noteContent');
-            if (noteContent) {
-                noteContent.addEventListener('input', handleNoteLinkInput);
-                noteContent.addEventListener('keydown', function(e) {
-                    if (linkSuggestionDiv && linkSuggestionDiv.style.display === 'block') {
-                        if (e.key === 'ArrowDown') {
-                            e.preventDefault();
-                            selectedSuggestionIndex = (selectedSuggestionIndex + 1) % currentSuggestions.length;
-                            updateSuggestionSelection();
-                        } else if (e.key === 'ArrowUp') {
-                            e.preventDefault();
-                            selectedSuggestionIndex = selectedSuggestionIndex <= 0 ? currentSuggestions.length - 1 : selectedSuggestionIndex - 1;
-                            updateSuggestionSelection();
-                        } else if ((e.key === 'Enter' || e.key === 'Tab') && selectedSuggestionIndex >= 0) {
-                            e.preventDefault();
-                            e.stopPropagation();
-                            insertNoteLink(currentSuggestions[selectedSuggestionIndex].title);
-                        } else if (e.key === 'Escape') {
-                            e.preventDefault();
-                            hideLinkSuggestions();
-                        }
-                    }
-                });
-            }
-        }
-        
-        function handleNoteLinkInput(event) {
-            const selection = window.getSelection();
-            if (selection.rangeCount === 0) return;
-            
-            const range = selection.getRangeAt(0);
-            const textContent = range.startContainer.textContent || '';
-            const cursorPos = range.startOffset;
-            
-            const beforeCursor = textContent.substring(0, cursorPos);
-            const linkMatch = beforeCursor.match(/@([\w\s-]*)$/);
-            
-            if (linkMatch) {
-                const searchTerm = linkMatch[1].toLowerCase();
-                showLinkSuggestions(searchTerm, range);
-            } else {
-                hideLinkSuggestions();
-            }
-        }
-        
-        function showLinkSuggestions(searchTerm, range) {
-            currentSuggestions = notes.filter(note => 
-                (searchTerm === '' || note.title.toLowerCase().includes(searchTerm)) && 
-                (!currentNote || note.id !== currentNote.id)
-            ).slice(0, 8);
-            
-            if (currentSuggestions.length === 0) {
-                hideLinkSuggestions();
-                return;
-            }
-            
-            selectedSuggestionIndex = 0;
-            
-            if (!linkSuggestionDiv) {
-                linkSuggestionDiv = document.createElement('div');
-                linkSuggestionDiv.className = 'link-suggestion';
-                document.body.appendChild(linkSuggestionDiv);
-            }
-            
-            const rect = range.getBoundingClientRect();
-            linkSuggestionDiv.style.left = rect.left + 'px';
-            linkSuggestionDiv.style.top = (rect.bottom + 5) + 'px';
-            linkSuggestionDiv.style.display = 'block';
-            
-            updateSuggestionSelection();
-        }
-        
-        function updateSuggestionSelection() {
-            linkSuggestionDiv.innerHTML = currentSuggestions.map((note, index) => {
-                const category = categories.find(cat => cat.name === note.category) || { color: '#4a9eff' };
-                return `<div class="link-suggestion-item ${index === selectedSuggestionIndex ? 'selected' : ''}" onclick="event.stopPropagation(); insertNoteLink('${note.title.replace(/'/g, "\\'")}')"; return false;">
-                    <div class="suggestion-title">${note.title}</div>
-                    <div class="suggestion-meta" style="color: ${category.color}">${note.category}</div>
-                </div>`;
-            }).join('');
-        }
-        
-        function hideLinkSuggestions() {
-            if (linkSuggestionDiv) {
-                linkSuggestionDiv.style.display = 'none';
-            }
-            selectedSuggestionIndex = -1;
-            currentSuggestions = [];
-        }
-        
-        function insertNoteLink(noteTitle) {
-            const editor = document.getElementById('noteContent');
-            const selection = window.getSelection();
-            
-            if (selection.rangeCount === 0) {
-                hideLinkSuggestions();
-                return;
-            }
-            
-            const range = selection.getRangeAt(0);
-            const textNode = range.startContainer;
-            const cursorPos = range.startOffset;
-            
-            if (textNode.nodeType === Node.TEXT_NODE) {
-                const text = textNode.textContent;
-                const beforeCursor = text.substring(0, cursorPos);
-                const linkMatch = beforeCursor.match(/@([\w\s-]*)$/);
-                
-                if (linkMatch) {
-                    const startPos = cursorPos - linkMatch[0].length;
-                    const beforeLink = text.substring(0, startPos);
-                    const afterCursor = text.substring(cursorPos);
-                    
-                    textNode.textContent = beforeLink + `@${noteTitle} ` + afterCursor;
-                    
-                    // Set cursor after the inserted link
-                    const newPos = startPos + `@${noteTitle} `.length;
-                    range.setStart(textNode, newPos);
-                    range.setEnd(textNode, newPos);
-                    selection.removeAllRanges();
-                    selection.addRange(range);
-                }
-            }
-            
-            hideLinkSuggestions();
-            editor.focus();
-        }
-        
-        // Setup click handlers for note links
-        function setupNoteLinkClicks() {
-            document.addEventListener('click', function(event) {
-                if (event.target.classList.contains('note-link') && event.target.getAttribute('data-note-id')) {
-                    event.preventDefault();
-                    event.stopPropagation();
-                    const noteId = event.target.getAttribute('data-note-id');
-                    viewNote(noteId);
-                }
-            });
-        }
-        
-        // Category context menu functions
-        let contextCategoryName = null;
-        
-        window.showCategoryContextMenu = function(event, categoryName) {
-            event.preventDefault();
-            event.stopPropagation();
-            
-            if (categoryName === 'General') return;
-            
-            contextCategoryName = categoryName;
-            const categoryContextMenu = document.getElementById('categoryContextMenu');
-            
-            if (categoryContextMenu) {
-                // Show menu temporarily to get its dimensions
-                categoryContextMenu.style.display = 'block';
-                categoryContextMenu.style.visibility = 'hidden';
-                
-                const menuRect = categoryContextMenu.getBoundingClientRect();
-                const windowHeight = window.innerHeight;
-                const windowWidth = window.innerWidth;
-                
-                let left = event.pageX;
-                let top = event.pageY;
-                
-                // Check if menu would go off the bottom of the screen
-                if (event.clientY + menuRect.height > windowHeight) {
-                    top = event.pageY - menuRect.height;
-                }
-                
-                // Check if menu would go off the right of the screen
-                if (event.clientX + menuRect.width > windowWidth) {
-                    left = event.pageX - menuRect.width;
-                }
-                
-                categoryContextMenu.style.left = left + 'px';
-                categoryContextMenu.style.top = top + 'px';
-                categoryContextMenu.style.visibility = 'visible';
-                
-                setTimeout(() => {
-                    document.addEventListener('click', hideCategoryContextMenu, { once: true });
-                }, 0);
-            }
-        };
-        
-        function hideCategoryContextMenu() {
-            document.getElementById('categoryContextMenu').style.display = 'none';
-            contextCategoryName = null;
-        }
-        
-        function contextEditCategory() {
-            if (contextCategoryName) {
-                const category = categories.find(cat => cat.name === contextCategoryName);
-                if (category) {
-                    editingCategory = contextCategoryName;
-                    document.getElementById('categoryModalTitle').textContent = '✏️ Edit Category';
-                    document.getElementById('categorySaveBtn').textContent = 'Update';
-                    document.getElementById('categoryNameInput').value = category.name;
-                    document.getElementById('categoryColorInput').value = category.color;
-                    
-                    const buildHierarchicalOptions = (parentName = null, level = 0) => {
-                        const children = categories.filter(cat => cat.parent === parentName && cat.name !== contextCategoryName);
-                        let options = '';
-                        children.forEach(cat => {
-                            const indent = '\u00A0\u00A0\u00A0'.repeat(level);
-                            options += `<option value="${cat.name}">${indent}${cat.name}</option>`;
-                            options += buildHierarchicalOptions(cat.name, level + 1);
-                        });
-                        return options;
-                    };
-                    
-                    const parentSelect = document.getElementById('parentCategoryInput');
-                    parentSelect.innerHTML = '<option value="">No parent (root category)</option>' + buildHierarchicalOptions();
-                    parentSelect.value = category.parent || '';
-                    
-                    document.getElementById('categoryModal').style.display = 'flex';
-                    document.getElementById('categoryNameInput').focus();
-                }
-            }
-            hideCategoryContextMenu();
-        }
-        
-        function contextCreateSubcategory() {
-            if (contextCategoryName) {
-                editingCategory = null;
-                document.getElementById('categoryModalTitle').textContent = '📁 Add Subcategory';
-                document.getElementById('categorySaveBtn').textContent = 'Create';
-                document.getElementById('categoryNameInput').value = '';
-                document.getElementById('categoryColorInput').value = '#4a9eff';
-                
-                const buildHierarchicalOptions = (parentName = null, level = 0) => {
-                    const children = categories.filter(cat => cat.parent === parentName);
-                    let options = '';
-                    children.forEach(cat => {
-                        const indent = '\u00A0\u00A0\u00A0'.repeat(level);
-                        options += `<option value="${cat.name}">${indent}${cat.name}</option>`;
-                        options += buildHierarchicalOptions(cat.name, level + 1);
-                    });
-                    return options;
-                };
-                
-                const parentSelect = document.getElementById('parentCategoryInput');
-                parentSelect.innerHTML = '<option value="">No parent (root category)</option>' + buildHierarchicalOptions();
-                parentSelect.value = contextCategoryName;
-                
-                document.getElementById('categoryModal').style.display = 'flex';
-                document.getElementById('categoryNameInput').focus();
-            }
-            hideCategoryContextMenu();
-        }
-        
-        function contextDeleteCategory() {
-            if (contextCategoryName) {
-                deleteCategory(contextCategoryName, true); // true = from context menu
-            }
-            hideCategoryContextMenu();
-        }
-        
-        // Note context menu functions
-        let contextNoteId = null;
-        
-        function showNoteContextMenu(event, noteId) {
-            event.preventDefault();
-            event.stopPropagation();
-            
-            contextNoteId = noteId;
-            const noteContextMenu = document.getElementById('noteContextMenu');
-            
-            if (noteContextMenu) {
-                // Show menu temporarily to get its dimensions
-                noteContextMenu.style.display = 'block';
-                noteContextMenu.style.visibility = 'hidden';
-                
-                const menuRect = noteContextMenu.getBoundingClientRect();
-                const windowHeight = window.innerHeight;
-                const windowWidth = window.innerWidth;
-                
-                let left = event.pageX;
-                let top = event.pageY;
-                
-                // Check if menu would go off the bottom of the screen
-                if (event.clientY + menuRect.height > windowHeight) {
-                    top = event.pageY - menuRect.height;
-                }
-                
-                // Check if menu would go off the right of the screen
-                if (event.clientX + menuRect.width > windowWidth) {
-                    left = event.pageX - menuRect.width;
-                }
-                
-                noteContextMenu.style.left = left + 'px';
-                noteContextMenu.style.top = top + 'px';
-                noteContextMenu.style.visibility = 'visible';
-                
-                setTimeout(() => {
-                    document.addEventListener('click', hideNoteContextMenu, { once: true });
-                }, 0);
-            }
-        }
-        
-        function hideNoteContextMenu() {
-            document.getElementById('noteContextMenu').style.display = 'none';
-            contextNoteId = null;
-        }
-        
-        function contextEditNote() {
-            if (contextNoteId) {
-                viewNote(contextNoteId);
-                setTimeout(() => editNote(), 100);
-            }
-            hideNoteContextMenu();
-        }
-        
-        function contextMoveNote() {
-            if (contextNoteId) {
-                currentNote = notes.find(n => n.id === contextNoteId);
-                moveNoteToCategory();
-            }
-            hideNoteContextMenu();
-        }
-        
-        function contextPinNote() {
-            if (contextNoteId) {
-                togglePin(contextNoteId);
-            }
-            hideNoteContextMenu();
-        }
-        
-        function contextDeleteNote() {
-            if (contextNoteId) {
-                currentNote = notes.find(n => n.id === contextNoteId);
-                deleteNote();
-            }
-            hideNoteContextMenu();
-        }
-        
-        // Category drag and drop reordering
-        let draggedCategoryName = null;
-        
-        function handleCategoryDragStart(event) {
-            const categoryItem = event.target.closest('.category-item');
-            draggedCategoryName = categoryItem.dataset.categoryName;
-            categoryItem.classList.add('dragging');
-            event.dataTransfer.effectAllowed = 'move';
-        }
-        
-        function handleCategoryDragEnd(event) {
-            const categoryItem = event.target.closest('.category-item');
-            categoryItem.classList.remove('dragging');
-            draggedCategoryName = null;
-            // Remove all drag-over indicators
-            document.querySelectorAll('.category-item').forEach(item => {
-                item.classList.remove('drag-over-reorder');
-            });
-        }
-        
-        function handleCategoryReorderDragOver(event) {
-            if (!draggedCategoryName) return;
-            event.preventDefault();
-            event.dataTransfer.dropEffect = 'move';
-            
-            const targetCategoryName = event.currentTarget.dataset.categoryName;
-            if (targetCategoryName && targetCategoryName !== draggedCategoryName) {
-                event.currentTarget.classList.add('drag-over-reorder');
-            }
-        }
-        
-        async function handleCategoryReorderDrop(event) {
-            event.preventDefault();
-            event.currentTarget.classList.remove('drag-over-reorder');
-            
-            const targetCategoryName = event.currentTarget.dataset.categoryName;
-            
-            if (draggedCategoryName && targetCategoryName && draggedCategoryName !== targetCategoryName) {
-                // Find the categories in the array
-                const draggedIndex = categories.findIndex(cat => cat.name === draggedCategoryName);
-                const targetIndex = categories.findIndex(cat => cat.name === targetCategoryName);
-                
-                if (draggedIndex !== -1 && targetIndex !== -1) {
-                    // Swap the categories in the array
-                    const draggedCategory = categories[draggedIndex];
-                    categories.splice(draggedIndex, 1);
-                    categories.splice(targetIndex, 0, draggedCategory);
-                    
-                    // Update the display
-                    updateCategorySelector();
-                }
-            }
-        }
-</script>
+            <div id="backupTabManage" class="backup-tab-content">
+                <div class="backup-slots" id="backupSlots">
+                    <!-- Backup slots will be populated by JavaScript -->
+                </div>
+                <div class="backup-actions">
+                    <button class="modal-btn save" onclick="createBackup()">Create New Backup</button>
+                    <button class="modal-btn cancel" onclick="closeBackupModal()">Close</button>
+                </div>
+            </div>
+
+            <div id="backupTabImport" class="backup-tab-content" style="display: none;">
+                <div class="import-export-section">
+                    <h4>Import Backup</h4>
+                    <p>Select a backup file to import:</p>
+                    <input type="file" id="importFileInput" accept=".json" style="margin: 1rem 0;">
+                    <button class="modal-btn save" onclick="importBackupFile()">Import Backup</button>
+                </div>
+                <div class="import-export-section">
+                    <h4>Export Backup</h4>
+                    <p>Export a backup slot to file:</p>
+                    <select id="exportBackupSlot" style="margin: 1rem 0; padding: 0.5rem;">
+                        <option value="">Select backup slot to export</option>
+                    </select>
+                    <button class="modal-btn save" onclick="exportBackupFile()">Export to File</button>
+                </div>
+                <div class="backup-actions">
+                    <button class="modal-btn cancel" onclick="closeBackupModal()">Close</button>
+                </div>
+            </div>
+
+
+        </div>
+    </div>
+
+    <!-- Enhanced Confirmation Modal -->
+    <div id="confirmationModal" class="modal" style="display: none;">
+        <div class="modal-content confirmation-modal">
+            <div class="confirmation-icon" id="confirmationIcon">⚠️</div>
+            <h3 id="confirmationTitle">Confirm Action</h3>
+            <p id="confirmationMessage">Are you sure you want to proceed?</p>
+            <div class="confirmation-details" id="confirmationDetails" style="display: none;"></div>
+            <div class="modal-buttons">
+                <button class="modal-btn save" id="confirmationConfirm">Confirm</button>
+                <button class="modal-btn cancel" id="confirmationCancel">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="modules/logger.js"></script>
+    <script src="modules/performance.js"></script>
+    <script src="modules/textEditor.js"></script>
+    <script src="modules/export.js"></script>
+    <script src="modules/themes.js"></script>
+    <script src="renderer.js"></script>
 </body>
 </html>
