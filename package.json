@@ -1,6 +1,6 @@
 {
   "name": "mindkeep-desktop",
-  "version": "7.0.7",
+  "version": "7.0.8",
   "description": "Offline knowledge vault desktop app",
   "main": "main.js",
   "scripts": {
