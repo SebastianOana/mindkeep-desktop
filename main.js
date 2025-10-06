@@ -173,6 +173,8 @@ ipcMain.handle('db-toggle-pin-note', (_, id) => {
     return false;
 });
 
+
+
 // Database statistics
 ipcMain.handle('db-get-stats', () => {
     return database.getStats();

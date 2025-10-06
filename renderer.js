@@ -303,9 +303,27 @@ function updateNotesList() {
 
     logger.debug('Updating notes list', { searchTerm, currentCategory });
 
-    // Filter notes by selected category
-    let filteredNotes = currentCategory === 'all' ?
-        notes : notes.filter(note => note.category === currentCategory);
+    // Filter notes by selected category (including subcategories)
+    let filteredNotes;
+    if (currentCategory === 'all') {
+        filteredNotes = notes;
+    } else {
+        // Get all subcategories recursively
+        const getAllSubcategories = (categoryName) => {
+            const subcategories = [categoryName];
+            const getChildren = (parentName) => {
+                categories.filter(cat => cat.parent === parentName).forEach(subCat => {
+                    subcategories.push(subCat.name);
+                    getChildren(subCat.name);
+                });
+            };
+            getChildren(categoryName);
+            return subcategories;
+        };
+        
+        const categoryAndSubcategories = getAllSubcategories(currentCategory);
+        filteredNotes = notes.filter(note => categoryAndSubcategories.includes(note.category));
+    }
 
     // Filter by search term using enhanced search logic
     if (searchTerm) {
@@ -1700,6 +1718,416 @@ async function installUpdate() {
 
 
 
+// Categories collapse functionality
+function toggleCategoriesCollapse() {
+    const categoriesTree = document.getElementById('categoriesTree');
+    const collapseArrow = document.getElementById('categoriesCollapseArrow');
+    
+    if (categoriesTree && collapseArrow) {
+        const isCollapsed = categoriesTree.classList.contains('collapsed');
+        
+        if (isCollapsed) {
+            // Expand
+            categoriesTree.classList.remove('collapsed');
+            collapseArrow.classList.remove('collapsed');
+            collapseArrow.textContent = '▼';
+        } else {
+            // Collapse
+            categoriesTree.classList.add('collapsed');
+            collapseArrow.classList.add('collapsed');
+            collapseArrow.textContent = '▶';
+        }
+    }
+}
+
+// Advanced Search functionality
+function showSearchView() {
+    document.getElementById('notesTab').classList.remove('active');
+    document.getElementById('tasksTab').classList.remove('active');
+    document.getElementById('searchTab').classList.add('active');
+    document.getElementById('notesView').classList.remove('active');
+    document.getElementById('tasksView').classList.remove('active');
+    document.getElementById('searchView').classList.add('active');
+
+    // Hide search bar in search view
+    const searchBar = document.querySelector('.search-bar');
+    if (searchBar) {
+        searchBar.style.display = 'none';
+    }
+
+    // Initialize search if not already done
+    initializeAdvancedSearch();
+}
+
+let advancedSearchInitialized = false;
+let savedSearches = [];
+let searchHistory = [];
+
+function initializeAdvancedSearch() {
+    if (advancedSearchInitialized) return;
+    
+    const searchInput = document.getElementById('advancedSearchInput');
+    const datePreset = document.getElementById('datePreset');
+    const categoryFilter = document.getElementById('categoryFilter');
+    
+    // Populate category filter
+    populateSearchCategories();
+    
+    // Search input handler
+    searchInput.addEventListener('input', debounceSearch);
+    
+    // Date preset handler
+    datePreset.addEventListener('change', handleDatePresetChange);
+    
+    // Filter change handlers
+    document.querySelectorAll('#searchView input[type="checkbox"], #searchView select').forEach(element => {
+        element.addEventListener('change', performAdvancedSearchQuery);
+    });
+    
+    advancedSearchInitialized = true;
+}
+
+function populateSearchCategories() {
+    const categoryFilter = document.getElementById('categoryFilter');
+    if (!categoryFilter) return;
+    
+    categoryFilter.innerHTML = '<option value="">All categories</option>';
+    
+    categories.forEach(category => {
+        const option = document.createElement('option');
+        option.value = category.name;
+        option.textContent = category.name;
+        categoryFilter.appendChild(option);
+    });
+}
+
+let searchTimeout;
+function debounceSearch() {
+    clearTimeout(searchTimeout);
+    searchTimeout = setTimeout(performAdvancedSearchQuery, 300);
+}
+
+function handleDatePresetChange() {
+    const preset = document.getElementById('datePreset').value;
+    const customRange = document.getElementById('customDateRange');
+    const dateFrom = document.getElementById('dateFrom');
+    const dateTo = document.getElementById('dateTo');
+    
+    if (preset === 'custom') {
+        customRange.style.display = 'flex';
+    } else {
+        customRange.style.display = 'none';
+        
+        const now = new Date();
+        let fromDate = null;
+        
+        switch (preset) {
+            case 'today':
+                fromDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+                break;
+            case 'week':
+                fromDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+                break;
+            case 'month':
+                fromDate = new Date(now.getFullYear(), now.getMonth(), 1);
+                break;
+        }
+        
+        if (fromDate) {
+            dateFrom.value = fromDate.toISOString().split('T')[0];
+            dateTo.value = now.toISOString().split('T')[0];
+        } else {
+            dateFrom.value = '';
+            dateTo.value = '';
+        }
+    }
+    
+    performAdvancedSearchQuery();
+}
+
+function performAdvancedSearchQuery() {
+    const startTime = performance.now();
+    const query = document.getElementById('advancedSearchInput').value.trim();
+    
+    if (!query) {
+        displaySearchResults([], 0);
+        return;
+    }
+    
+    // Get filter settings
+    const filters = {
+        searchTitle: document.getElementById('searchTitle').checked,
+        searchContent: document.getElementById('searchContent').checked,
+        searchTags: document.getElementById('searchTags').checked,
+        searchDescription: document.getElementById('searchDescription').checked,
+        pinnedOnly: document.getElementById('pinnedOnly').checked,
+        hasTasks: document.getElementById('hasTasks').checked,
+        hasLinks: document.getElementById('hasLinks').checked,
+        categories: Array.from(document.getElementById('categoryFilter').selectedOptions).map(opt => opt.value).filter(v => v),
+        dateFrom: document.getElementById('dateFrom').value,
+        dateTo: document.getElementById('dateTo').value
+    };
+    
+    // Perform search
+    const results = executeAdvancedSearch(query, filters);
+    const searchTime = performance.now() - startTime;
+    
+    // Display results
+    displaySearchResults(results, searchTime);
+    
+    // Enable save button if query exists
+    document.getElementById('saveCurrentSearch').disabled = !query;
+}
+
+function executeAdvancedSearch(query, filters) {
+    let filteredNotes = [...notes];
+    
+    // Apply content filters first
+    if (filters.pinnedOnly) {
+        filteredNotes = filteredNotes.filter(note => note.isPinned);
+    }
+    
+    if (filters.hasTasks) {
+        filteredNotes = filteredNotes.filter(note => 
+            note.content && (note.content.includes('☐') || note.content.includes('☑'))
+        );
+    }
+    
+    if (filters.hasLinks) {
+        filteredNotes = filteredNotes.filter(note => 
+            note.content && note.content.includes('@')
+        );
+    }
+    
+    if (filters.categories.length > 0) {
+        filteredNotes = filteredNotes.filter(note => 
+            filters.categories.includes(note.category)
+        );
+    }
+    
+    // Apply date filters
+    if (filters.dateFrom) {
+        const fromDate = new Date(filters.dateFrom);
+        filteredNotes = filteredNotes.filter(note => 
+            new Date(note.updatedAt) >= fromDate
+        );
+    }
+    
+    if (filters.dateTo) {
+        const toDate = new Date(filters.dateTo + 'T23:59:59');
+        filteredNotes = filteredNotes.filter(note => 
+            new Date(note.updatedAt) <= toDate
+        );
+    }
+    
+    // Parse and apply text search
+    return parseAndSearchQuery(query, filteredNotes, filters);
+}
+
+function parseAndSearchQuery(query, notes, filters) {
+    // Handle exact phrases
+    const exactPhrases = [];
+    let processedQuery = query.replace(/"([^"]+)"/g, (match, phrase) => {
+        exactPhrases.push(phrase.toLowerCase());
+        return `__EXACT_${exactPhrases.length - 1}__`;
+    });
+    
+    // Split by AND/OR operators
+    const andParts = processedQuery.split(/\s+AND\s+/i);
+    
+    return notes.filter(note => {
+        return andParts.every(andPart => {
+            const orParts = andPart.split(/\s+OR\s+/i);
+            return orParts.some(orPart => {
+                return matchesSearchTerm(note, orPart.trim(), exactPhrases, filters);
+            });
+        });
+    }).map(note => ({
+        ...note,
+        relevanceScore: calculateRelevance(note, query, filters)
+    })).sort((a, b) => b.relevanceScore - a.relevanceScore);
+}
+
+function matchesSearchTerm(note, term, exactPhrases, filters) {
+    // Handle exact phrase placeholders
+    if (term.startsWith('__EXACT_')) {
+        const phraseIndex = parseInt(term.match(/__EXACT_(\d+)__/)[1]);
+        const phrase = exactPhrases[phraseIndex];
+        return searchInNoteFields(note, phrase, filters, true);
+    }
+    
+    // Handle NOT operator
+    if (term.startsWith('NOT ')) {
+        const notTerm = term.substring(4).toLowerCase();
+        return !searchInNoteFields(note, notTerm, filters, false);
+    }
+    
+    // Handle tag search
+    if (term.startsWith('#')) {
+        const tag = term.substring(1).toLowerCase();
+        return note.tags && note.tags.some(noteTag => 
+            noteTag.toLowerCase().includes(tag)
+        );
+    }
+    
+    // Handle category search
+    if (term.startsWith('category:')) {
+        const category = term.substring(9).toLowerCase();
+        return note.category && note.category.toLowerCase().includes(category);
+    }
+    
+    // Handle date search
+    if (term.startsWith('created:')) {
+        const dateStr = term.substring(8);
+        return note.createdAt && note.createdAt.includes(dateStr);
+    }
+    
+    // Regular text search
+    return searchInNoteFields(note, term.toLowerCase(), filters, false);
+}
+
+function searchInNoteFields(note, term, filters, exactMatch) {
+    const searchFields = [];
+    
+    if (filters.searchTitle && note.title) {
+        searchFields.push(note.title.toLowerCase());
+    }
+    if (filters.searchContent && note.content) {
+        searchFields.push(note.content.toLowerCase());
+    }
+    if (filters.searchTags && note.tags) {
+        searchFields.push(note.tags.join(' ').toLowerCase());
+    }
+    if (filters.searchDescription && note.description) {
+        searchFields.push(note.description.toLowerCase());
+    }
+    
+    const searchText = searchFields.join(' ');
+    
+    return exactMatch ? 
+        searchText.includes(term) : 
+        searchText.includes(term);
+}
+
+function calculateRelevance(note, query, filters) {
+    let score = 0;
+    const queryLower = query.toLowerCase();
+    
+    // Title matches get higher score
+    if (note.title && note.title.toLowerCase().includes(queryLower)) {
+        score += 10;
+    }
+    
+    // Tag matches get medium score
+    if (note.tags && note.tags.some(tag => tag.toLowerCase().includes(queryLower))) {
+        score += 5;
+    }
+    
+    // Content matches get base score
+    if (note.content && note.content.toLowerCase().includes(queryLower)) {
+        score += 1;
+    }
+    
+    // Pinned notes get bonus
+    if (note.isPinned) {
+        score += 2;
+    }
+    
+    return score;
+}
+
+function displaySearchResults(results, searchTime) {
+    const resultsList = document.getElementById('searchResultsList');
+    const resultsCount = document.getElementById('resultsCount');
+    const searchTimeSpan = document.getElementById('searchTime');
+    
+    resultsCount.textContent = `${results.length} result${results.length !== 1 ? 's' : ''} found`;
+    searchTimeSpan.textContent = `(${searchTime.toFixed(0)}ms)`;
+    
+    if (results.length === 0) {
+        resultsList.innerHTML = `
+            <div class="search-welcome">
+                <div class="search-welcome-icon">🔍</div>
+                <h3>No results found</h3>
+                <p>Try adjusting your search terms or filters</p>
+            </div>
+        `;
+        return;
+    }
+    
+    resultsList.innerHTML = results.map(note => {
+        const category = categories.find(cat => cat.name === note.category) || { color: '#4a9eff' };
+        const snippet = generateSnippet(note, document.getElementById('advancedSearchInput').value);
+        
+        return `
+            <div class="search-result-item" onclick="viewNote('${note.id}'); showNotesView();">
+                <div class="search-result-title">${highlightSearchTerms(note.title, document.getElementById('advancedSearchInput').value)}</div>
+                <div class="search-result-meta">
+                    <span style="color: ${category.color}">${note.category}</span>
+                    <span>${new Date(note.updatedAt).toLocaleDateString()}</span>
+                    ${note.tags && note.tags.length > 0 ? `<span>${note.tags.map(tag => '#' + tag).join(' ')}</span>` : ''}
+                </div>
+                <div class="search-result-snippet">${snippet}</div>
+            </div>
+        `;
+    }).join('');
+}
+
+function generateSnippet(note, query) {
+    const content = note.content || note.description || '';
+    if (!content) return 'No content';
+    
+    const queryTerms = query.toLowerCase().split(/\s+/).filter(term => 
+        !['and', 'or', 'not'].includes(term) && !term.startsWith('#') && !term.includes(':')
+    );
+    
+    if (queryTerms.length === 0) {
+        return content.substring(0, 150) + (content.length > 150 ? '...' : '');
+    }
+    
+    // Find first occurrence of any query term
+    const contentLower = content.toLowerCase();
+    let bestIndex = -1;
+    
+    for (const term of queryTerms) {
+        const index = contentLower.indexOf(term);
+        if (index !== -1 && (bestIndex === -1 || index < bestIndex)) {
+            bestIndex = index;
+        }
+    }
+    
+    if (bestIndex === -1) {
+        return content.substring(0, 150) + (content.length > 150 ? '...' : '');
+    }
+    
+    // Extract snippet around the found term
+    const start = Math.max(0, bestIndex - 50);
+    const end = Math.min(content.length, bestIndex + 100);
+    let snippet = content.substring(start, end);
+    
+    if (start > 0) snippet = '...' + snippet;
+    if (end < content.length) snippet = snippet + '...';
+    
+    return highlightSearchTerms(snippet, query);
+}
+
+function highlightSearchTerms(text, query) {
+    if (!query) return text;
+    
+    const queryTerms = query.toLowerCase().split(/\s+/).filter(term => 
+        !['and', 'or', 'not'].includes(term) && !term.startsWith('#') && !term.includes(':')
+    );
+    
+    let highlightedText = text;
+    
+    queryTerms.forEach(term => {
+        const regex = new RegExp(`(${term})`, 'gi');
+        highlightedText = highlightedText.replace(regex, '<span class="search-highlight">$1</span>');
+    });
+    
+    return highlightedText;
+}
+
 // Initialize when page loads
 document.addEventListener('DOMContentLoaded', function() {
     initApp();
@@ -2986,8 +3414,10 @@ function initializeDedicatedTaskManager() {
 // Dedicated Task Interface Functions
 function showNotesView() {
     document.getElementById('notesTab').classList.add('active');
+    document.getElementById('mealPlannerTab').classList.remove('active');
     document.getElementById('tasksTab').classList.remove('active');
     document.getElementById('notesView').classList.add('active');
+    document.getElementById('mealPlannerView').classList.remove('active');
     document.getElementById('tasksView').classList.remove('active');
 
     // Show search bar in notes view
@@ -2999,8 +3429,10 @@ function showNotesView() {
 
 function showTasksView() {
     document.getElementById('notesTab').classList.remove('active');
+    document.getElementById('mealPlannerTab').classList.remove('active');
     document.getElementById('tasksTab').classList.add('active');
     document.getElementById('notesView').classList.remove('active');
+    document.getElementById('mealPlannerView').classList.remove('active');
     document.getElementById('tasksView').classList.add('active');
 
     // Hide search bar in tasks view
@@ -3798,6 +4230,10 @@ document.addEventListener('DOMContentLoaded', () => {
         initializeDedicatedTaskManager();
     }, 500);
 });
+
+
+
+
 
 // Also initialize when the app loads
 window.addEventListener('load', () => {

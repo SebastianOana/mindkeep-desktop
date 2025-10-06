@@ -231,6 +231,8 @@ class OptimizedDatabase {
         }
         this.flushPendingWrites();
     }
+
+
 }
 
 module.exports = OptimizedDatabase;

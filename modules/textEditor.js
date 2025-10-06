@@ -226,7 +226,7 @@ class TextEditor {
     // Insert inline code
     insertInlineCode() {
         const selection = window.getSelection();
-        if (selection.rangeCount === 0) return;
+    if (selection.rangeCount === 0) return;
 
         const range = selection.getRangeAt(0);
         const selectedText = range.toString();

@@ -105,6 +105,11 @@
                 <span class="tab-icon">✅</span>
                 <span class="tab-text">Tasks</span>
             </button>
+            <button id="mealPlannerTab" class="main-tab" onclick="showMealPlannerView()">
+                <span class="tab-icon">🍽️</span>
+                <span class="tab-text">Meals</span>
+            </button>
+
         </div>
 
         <!-- Notes View -->
@@ -112,11 +117,17 @@
             <div class="app-body">
             <div class="sidebar">
                 <div class="sidebar-header">
-                    <div class="categories-tree" id="categoriesTree">
-                        <div class="category-item root-category active" onclick="selectCategory('all')">
-                            <span class="category-icon">📁</span>
-                            <span class="category-name">All Notes</span>
-                            <span class="note-count">0</span>
+                    <div class="categories-section">
+                        <div class="categories-header" onclick="toggleCategoriesCollapse()">
+                            <span class="categories-title">Categories</span>
+                            <span class="collapse-arrow" id="categoriesCollapseArrow">▼</span>
+                        </div>
+                        <div class="categories-tree" id="categoriesTree">
+                            <div class="category-item root-category active" onclick="selectCategory('all')">
+                                <span class="category-icon">📁</span>
+                                <span class="category-name">All Notes</span>
+                                <span class="note-count">0</span>
+                            </div>
                         </div>
                     </div>
                     <div class="sidebar-controls">
@@ -338,6 +349,68 @@
                 </div>
             </div>
         </div>
+
+        <!-- Meal Planner View -->
+        <div id="mealPlannerView" class="main-view">
+            <div class="meal-planner-container">
+                <div class="meal-planner-header">
+                    <h2>🍽️ Meal Planner</h2>
+                    <div class="meal-planner-actions">
+                        <button id="addMealBtn" class="meal-btn primary" onclick="showAddMealModal()">
+                            <span class="btn-icon">➕</span>
+                            <span class="btn-text">Add Meal</span>
+                        </button>
+                        <button id="generatePlanBtn" class="meal-btn" onclick="generateWeeklyPlan()">
+                            <span class="btn-icon">🎲</span>
+                            <span class="btn-text">Generate Plan</span>
+                        </button>
+                        <button id="shoppingListBtn" class="meal-btn" onclick="generateShoppingList()">
+                            <span class="btn-icon">🛒</span>
+                            <span class="btn-text">Shopping List</span>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="meal-planner-main">
+                    <div class="meal-sidebar">
+                        <div class="meal-categories">
+                            <div class="meal-categories-header" onclick="toggleMealCategoriesCollapse()">
+                                <span class="meal-categories-title">Meal Categories</span>
+                                <span class="collapse-arrow" id="mealCategoriesCollapseArrow">▼</span>
+                            </div>
+                            <div class="meal-category-filters" id="mealCategoryFilters">
+                                <button class="meal-filter-btn active" data-category="all" onclick="filterMealsByCategory('all')">All</button>
+                                <button class="meal-filter-btn" data-category="breakfast" onclick="filterMealsByCategory('breakfast')">🌅 Breakfast</button>
+                                <button class="meal-filter-btn" data-category="lunch" onclick="filterMealsByCategory('lunch')">🌞 Lunch</button>
+                                <button class="meal-filter-btn" data-category="dinner" onclick="filterMealsByCategory('dinner')">🌙 Dinner</button>
+                                <button class="meal-filter-btn" data-category="snack" onclick="filterMealsByCategory('snack')">🍿 Snack</button>
+                            </div>
+                        </div>
+
+                        <div class="saved-meals">
+                            <h3>Saved Meals</h3>
+                            <div id="savedMealsList" class="saved-meals-list">
+                                <!-- Saved meals will be populated here -->
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="meal-calendar">
+                        <div class="calendar-header">
+                            <button class="calendar-nav" onclick="navigateWeek(-1)">‹</button>
+                            <h3 id="currentWeekTitle">This Week</h3>
+                            <button class="calendar-nav" onclick="navigateWeek(1)">›</button>
+                        </div>
+                        
+                        <div class="calendar-grid" id="mealCalendar">
+                            <!-- Calendar will be populated by JavaScript -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+
     </div> <!-- End Main Views -->
 
     <!-- Category Modal -->
@@ -1148,11 +1221,79 @@
         </div>
     </div>
 
+    <!-- Add Meal Modal -->
+    <div id="addMealModal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <button class="modal-close" onclick="closeAddMealModal()">&times;</button>
+            <h3>🍽️ Add New Meal</h3>
+
+            <div class="meal-form">
+                <input type="text" id="mealName" class="modal-input" placeholder="Meal name..." maxlength="100">
+                
+                <div class="meal-options">
+                    <div class="meal-option">
+                        <label for="mealCategory">Category:</label>
+                        <select id="mealCategory" class="modal-input">
+                            <option value="breakfast">🌅 Breakfast</option>
+                            <option value="lunch">🌞 Lunch</option>
+                            <option value="dinner" selected>🌙 Dinner</option>
+                            <option value="snack">🍿 Snack</option>
+                        </select>
+                    </div>
+
+                    <div class="meal-option">
+                        <label for="mealPrepTime">Prep Time (minutes):</label>
+                        <input type="number" id="mealPrepTime" class="modal-input" min="1" max="300" placeholder="30">
+                    </div>
+
+                    <div class="meal-option">
+                        <label for="mealServings">Servings:</label>
+                        <input type="number" id="mealServings" class="modal-input" min="1" max="20" value="4">
+                    </div>
+                </div>
+
+                <textarea id="mealIngredients" class="modal-input" placeholder="Ingredients (one per line)..." rows="6"></textarea>
+                
+                <textarea id="mealInstructions" class="modal-input" placeholder="Cooking instructions..." rows="4"></textarea>
+                
+                <textarea id="mealNotes" class="modal-input" placeholder="Notes (optional)..." rows="2"></textarea>
+            </div>
+
+            <div class="modal-buttons">
+                <button onclick="saveMeal()" class="modal-btn save">Save Meal</button>
+                <button onclick="closeAddMealModal()" class="modal-btn cancel">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Shopping List Modal -->
+    <div id="shoppingListModal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <button class="modal-close" onclick="closeShoppingListModal()">&times;</button>
+            <h3>🛒 Shopping List</h3>
+            
+            <div class="shopping-list-content">
+                <div class="shopping-list-header">
+                    <p>Shopping list for <span id="shoppingListWeek">this week</span></p>
+                </div>
+                
+                <div id="shoppingListItems" class="shopping-list-items">
+                    <!-- Shopping list items will be populated here -->
+                </div>
+            </div>
+
+            <div class="modal-buttons">
+                <button onclick="closeShoppingListModal()" class="modal-btn cancel">Close</button>
+            </div>
+        </div>
+    </div>
+
     <script src="modules/logger.js"></script>
     <script src="modules/performance.js"></script>
     <script src="modules/textEditor.js"></script>
     <script src="modules/export.js"></script>
     <script src="modules/themes.js"></script>
+    <script src="modules/mealPlanner.js"></script>
     <script src="renderer.js"></script>
 </body>
 </html>
