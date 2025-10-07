@@ -30,6 +30,7 @@
             <div class="search-bar">
                 <input type="text" id="searchInput" placeholder="Try: #tag, date:2024, category:work" class="search-input">
                 <button id="advancedSearchBtn" onclick="toggleAdvancedSearch()" class="advanced-search-btn" title="Advanced Search">🔍</button>
+                <link rel="stylesheet" href="note-references.css">
             </div>
 
             <button class="mobile-menu-btn" onclick="toggleMobileMenu()" title="Menu">
@@ -43,10 +44,15 @@
                 <div class="theme-selector-container">
                     <select id="themeSelector" class="theme-selector" onchange="themeManager.applyTheme(this.value)" title="Select theme">
                         <option value="dark">🌙 Dark</option>
-                        <option value="light">☀️ Light</option>
+                        <option value="earth">🌾 Warm Earth</option>
                         <option value="blue">🌊 Ocean Blue</option>
                         <option value="purple">🔮 Purple Haze</option>
                         <option value="green">🌲 Forest Green</option>
+                        <option value="sunset">🌅 Sunset Orange</option>
+                        <option value="slate">🌫️ Cool Slate</option>
+                        <option value="rose">🌹 Rose Gold</option>
+                        <option value="ocean">🌊 Deep Ocean</option>
+                        <option value="coffee">☕ Coffee Bean</option>
                     </select>
                 </div>
                 <div class="header-menu">
@@ -61,13 +67,17 @@
                                 <span class="menu-icon">🏷️</span>
                                 <span class="menu-text">Tag Manager</span>
                             </button>
+                            <button class="menu-item" onclick="showTemplateModal(); closeMenu()">
+                                <span class="menu-icon">📋</span>
+                                <span class="menu-text">Templates</span>
+                            </button>
                         </div>
                         <div class="menu-divider"></div>
                         <div class="menu-section">
                             <div class="menu-section-title">Data Management</div>
                             <button class="menu-item" onclick="showExportModal(); closeMenu()">
                                 <span class="menu-icon">📤</span>
-                                <span class="menu-text">Export Notes</span>
+                                <span class="menu-text">Import & Export</span>
                             </button>
                             <button class="menu-item" onclick="showBackupModal(); closeMenu()">
                                 <span class="menu-icon">💾</span>
@@ -82,12 +92,12 @@
                                 <span class="menu-text">Check Updates</span>
                             </button>
                             <button class="menu-item" onclick="showSettings(); closeMenu()">
-                                <span class="menu-icon">⚙️</span>
-                                <span class="menu-text">Settings</span>
+                                <span class="menu-icon">❓</span>
+                                <span class="menu-text">Help & Tips</span>
                             </button>
                             <button class="menu-item" onclick="showAbout(); closeMenu()">
                                 <span class="menu-icon">ℹ️</span>
-                                <span class="menu-text">About</span>
+                                <span class="menu-text">About MindKeep</span>
                             </button>
                         </div>
                     </div>

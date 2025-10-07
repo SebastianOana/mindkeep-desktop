@@ -31,6 +31,37 @@ let editingCategory = null; // Currently selected category for editing
 // UI state variables are declared later in the file to avoid conflicts
 
 // ============================================================================
+// NOTE REFERENCES FUNCTIONALITY
+// ============================================================================
+
+/**
+ * Converts @notename patterns in text to clickable links
+ * @param {string} text - The text content to process
+ * @returns {string} - HTML with clickable note references
+ */
+function processNoteReferences(text) {
+    // Find note titles that match existing notes and make them clickable
+    return notes.reduce((processedText, note) => {
+        const noteTitle = note.title;
+        const escapedTitle = noteTitle.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        const regex = new RegExp(escapedTitle, 'g');
+        return processedText.replace(regex, `<a href="#" data-note-id="${note.id}">${noteTitle}</a>`);
+    }, text);
+}
+
+/**
+ * Handles clicks on note references
+ * @param {Event} event - The click event
+ */
+function handleNoteReferenceClick(event) {
+    if (event.target.tagName === 'A' && event.target.hasAttribute('data-note-id')) {
+        event.preventDefault();
+        const noteId = event.target.getAttribute('data-note-id');
+        viewNote(noteId);
+    }
+}
+
+// ============================================================================
 // APPLICATION INITIALIZATION
 // ============================================================================
 
@@ -68,6 +99,9 @@ async function initApp() {
 
         updateCategorySelector();
         updateNotesList();
+        
+        // Add event listener for note reference clicks
+        document.addEventListener('click', handleNoteReferenceClick);
 
         performanceMonitor.end('app-initialization');
         logger.info('Application initialized successfully');
@@ -372,9 +406,9 @@ function processNoteLinks(text) {
         );
         
         if (linkedNote) {
-            return `<span class="note-link" data-note-id="${linkedNote.id}" style="color: #4a9eff !important; cursor: pointer; text-decoration: underline; font-weight: bold; background: rgba(74, 158, 255, 0.1); padding: 0.1rem 0.2rem; border-radius: 3px;">@${trimmedName}</span>`;
+            return `<a href="javascript:void(0)" class="note-link active-link" data-note-id="${linkedNote.id}" onclick="viewLinkedNote('${linkedNote.id}')" title="Click to open: ${linkedNote.title}">@${trimmedName}</a>`;
         } else {
-            return `<span style="color: #888;">@${trimmedName}</span>`;
+            return `<span class="note-link broken-link">@${trimmedName}</span>`;
         }
     });
 }
@@ -724,8 +758,8 @@ function viewNote(noteId) {
             ${currentNote.description ? `<br><span style="color: #4a9eff; font-style: italic;">📝 ${currentNote.description}</span>` : ''}
         `;
         
-        // Process note links and set content
-        const processedContent = processNoteLinks(currentNote.content || '');
+        // Process note references and set content
+        const processedContent = processNoteReferences(currentNote.content || '');
         document.getElementById('viewerContent').innerHTML = processedContent || '<em>No content</em>';
         
         // Store original content for search functionality
@@ -1547,7 +1581,11 @@ function makeDraggable(element) {
 
 async function saveCurrentNote() {
     const title = document.getElementById('noteTitle').value || 'Untitled';
-    const content = document.getElementById('noteContent').innerHTML;
+    let content = document.getElementById('noteContent').innerHTML;
+    
+    // Remove @ symbols before saving but don't create links yet
+    content = content.replace(/@([^@\n]+?)(?=\s|$|[.,!?;:])/g, '$1');
+    
     const category = document.getElementById('noteCategory').value || 'General';
     let tagsInput = document.getElementById('noteTags').value.trim();
     let tags = [];
@@ -4518,22 +4556,42 @@ function handleMenuClickOutside(event) {
 
 function showSettings() {
     showEnhancedModal(
-        '⚙️ Settings',
+        '⚙️ Help & Tips',
         `
         <div class="settings-content">
-            <h4>Application Settings</h4>
-            <p>Settings panel coming soon!</p>
-            <p>Current features available:</p>
+            <h4>⌨️ Keyboard Shortcuts</h4>
             <ul>
-                <li>Theme selection (dropdown in header)</li>
-                <li>Category management</li>
-                <li>Tag organization</li>
-                <li>Task management</li>
-                <li>Backup & restore</li>
+                <li><strong>Ctrl+N:</strong> Create new note</li>
+                <li><strong>Ctrl+Shift+N:</strong> Quick capture</li>
+                <li><strong>Ctrl+F:</strong> Search (or in-note search when viewing/editing)</li>
+                <li><strong>Ctrl+Shift+F:</strong> Advanced search</li>
+                <li><strong>Ctrl+S:</strong> Save current note</li>
+                <li><strong>Ctrl+R:</strong> Refresh application</li>
             </ul>
+            
+            <h4>🔍 Search Tips</h4>
+            <p>• Use <strong>#tag</strong> to find notes with specific tags</p>
+            <p>• Use <strong>category:work</strong> to find notes in a category</p>
+            <p>• Use <strong>date:2024</strong> to find notes from a specific year</p>
+            <p>• Use <strong>AND</strong> and <strong>OR</strong> to combine search terms</p>
+            
+            <h4>🔗 Note Linking</h4>
+            <p>• Type <strong>@NoteName</strong> to link to another note</p>
+            <p>• Autocomplete will suggest existing notes as you type</p>
+            <p>• Click linked notes to jump between them</p>
+            
+            <h4>🎨 Customization</h4>
+            <p>• Change themes using the dropdown in the header</p>
+            <p>• Customize category colors when creating categories</p>
+            <p>• Create custom templates for consistent note structures</p>
+            
+            <h4>💾 Data Safety</h4>
+            <p>• All data is stored locally on your computer</p>
+            <p>• Use the backup feature regularly to protect your data</p>
+            <p>• Export your notes anytime in multiple formats</p>
         </div>
         `,
-        [{ text: 'OK', action: () => {} }]
+        [{ text: 'Close', action: () => {} }]
     );
 }
 
@@ -4542,25 +4600,29 @@ function showAbout() {
         'ℹ️ About MindKeep',
         `
         <div class="about-content">
-            <h4>MindKeep v7.0.6</h4>
-            <p>A modern, feature-rich note-taking application</p>
+            <h4>MindKeep v7.0.8</h4>
+            <p>Your complete productivity companion for notes, tasks, and meal planning</p>
 
-            <h4>Features</h4>
-            <ul>
-                <li>📝 Rich text editing with formatting</li>
-                <li>🏷️ Smart tagging system with autocomplete</li>
-                <li>✅ Simple task management</li>
-                <li>📁 Category organization with colors</li>
-                <li>🔍 Powerful search functionality</li>
-                <li>🎨 Multiple beautiful themes</li>
-                <li>💾 Backup & restore system</li>
-                <li>📤 Export capabilities</li>
-            </ul>
+            <h4>What can you do with MindKeep?</h4>
+            <p>• <strong>Write & organize notes</strong> with rich text formatting and smart categories</p>
+            <p>• <strong>Manage tasks</strong> with custom lists, priorities, and due dates</p>
+            <p>• <strong>Plan meals</strong> with a weekly calendar and automatic shopping lists</p>
+            <p>• <strong>Tag everything</strong> for easy searching and organization</p>
+            <p>• <strong>Link notes together</strong> by typing @NoteName</p>
+            <p>• <strong>Use templates</strong> for consistent note structures</p>
+            <p>• <strong>Switch themes</strong> to match your style</p>
+            <p>• <strong>Export & backup</strong> your data anytime</p>
 
-            <h4>Built With</h4>
-            <p>Electron, SQLite, and modern web technologies</p>
+            <h4>Why MindKeep?</h4>
+            <p>• <strong>100% offline</strong> - Your data stays on your computer</p>
+            <p>• <strong>No subscriptions</strong> - Free to use forever</p>
+            <p>• <strong>Fast & reliable</strong> - Built with modern web technology</p>
+            <p>• <strong>Cross-platform</strong> - Works on Windows, Mac, and Linux</p>
 
-            <p><strong>Made with ❤️ for productivity enthusiasts</strong></p>
+            <h4>Technical Details</h4>
+            <p>Built with Electron and modern JavaScript. Data is stored locally using JSON files for maximum compatibility and portability.</p>
+
+            <p><strong>Made with ❤️ for people who love staying organized</strong></p>
         </div>
         `,
         [{ text: 'Close', action: () => {} }]
@@ -4791,10 +4853,11 @@ async function handleCategoryDrop(event, categoryName) {
     }
 }
 
-// Note linking improvements
+// Enhanced Note linking with smart popup positioning
 let linkSuggestionDiv = null;
 let selectedSuggestionIndex = -1;
 let currentSuggestions = [];
+let currentRange = null;
 
 function setupNoteLinking() {
     const noteContent = document.getElementById('noteContent');
@@ -4805,11 +4868,11 @@ function setupNoteLinking() {
                 if (e.key === 'ArrowDown') {
                     e.preventDefault();
                     selectedSuggestionIndex = (selectedSuggestionIndex + 1) % currentSuggestions.length;
-                    updateSuggestionSelection();
+                    updateSuggestionHighlight();
                 } else if (e.key === 'ArrowUp') {
                     e.preventDefault();
                     selectedSuggestionIndex = selectedSuggestionIndex <= 0 ? currentSuggestions.length - 1 : selectedSuggestionIndex - 1;
-                    updateSuggestionSelection();
+                    updateSuggestionHighlight();
                 } else if ((e.key === 'Enter' || e.key === 'Tab') && selectedSuggestionIndex >= 0) {
                     e.preventDefault();
                     e.stopPropagation();
@@ -4818,6 +4881,13 @@ function setupNoteLinking() {
                     e.preventDefault();
                     hideLinkSuggestions();
                 }
+            }
+        });
+        
+        // Hide suggestions when clicking outside
+        document.addEventListener('click', function(e) {
+            if (linkSuggestionDiv && !linkSuggestionDiv.contains(e.target) && e.target !== noteContent) {
+                hideLinkSuggestions();
             }
         });
     }
@@ -4836,8 +4906,13 @@ function handleNoteLinkInput(_event) {
     
     if (linkMatch) {
         const searchTerm = linkMatch[1].toLowerCase();
-        showLinkSuggestions(searchTerm, range);
+        // Add small delay to prevent flickering while typing
+        clearTimeout(window.linkSuggestionTimeout);
+        window.linkSuggestionTimeout = setTimeout(() => {
+            showLinkSuggestions(searchTerm, range);
+        }, 150);
     } else {
+        clearTimeout(window.linkSuggestionTimeout);
         hideLinkSuggestions();
     }
 }
@@ -4854,37 +4929,192 @@ function showLinkSuggestions(searchTerm, range) {
     }
     
     selectedSuggestionIndex = 0;
+    currentRange = range;
     
     if (!linkSuggestionDiv) {
         linkSuggestionDiv = document.createElement('div');
-        linkSuggestionDiv.className = 'link-suggestion';
+        linkSuggestionDiv.className = 'note-link-suggestions';
+        linkSuggestionDiv.style.position = 'fixed';
+        linkSuggestionDiv.style.zIndex = '10000';
+        linkSuggestionDiv.style.background = 'var(--bg-primary)';
+        linkSuggestionDiv.style.border = '2px solid var(--accent-primary)';
+        linkSuggestionDiv.style.borderRadius = '12px';
+        linkSuggestionDiv.style.boxShadow = '0 12px 32px rgba(0, 0, 0, 0.3), 0 0 0 1px rgba(74, 158, 255, 0.2)';
+        linkSuggestionDiv.style.maxWidth = '350px';
+        linkSuggestionDiv.style.minWidth = '300px';
+        linkSuggestionDiv.style.maxHeight = '280px';
+        linkSuggestionDiv.style.overflowY = 'auto';
+        linkSuggestionDiv.style.backdropFilter = 'blur(12px)';
         document.body.appendChild(linkSuggestionDiv);
     }
     
+    // Smart positioning with better collision detection
     const rect = range.getBoundingClientRect();
-    linkSuggestionDiv.style.left = rect.left + 'px';
-    linkSuggestionDiv.style.top = (rect.bottom + 5) + 'px';
+    const windowHeight = window.innerHeight;
+    const windowWidth = window.innerWidth;
+    const popupWidth = 350;
+    const popupHeight = Math.min(280, currentSuggestions.length * 65 + 40); // Dynamic height with header
+    const margin = 15;
+    
+    let left = rect.left;
+    let top = rect.bottom + 12;
+    let positioning = 'below';
+    
+    // Check vertical positioning
+    const spaceBelow = windowHeight - rect.bottom;
+    const spaceAbove = rect.top;
+    
+    if (spaceBelow < popupHeight + margin && spaceAbove > popupHeight + margin) {
+        // Show above if more space above
+        top = rect.top - popupHeight - 12;
+        positioning = 'above';
+    } else if (spaceBelow < popupHeight + margin) {
+        // Center vertically if not enough space above or below
+        top = Math.max(margin, (windowHeight - popupHeight) / 2);
+        positioning = 'center';
+    }
+    
+    // Check horizontal positioning
+    if (left + popupWidth > windowWidth - margin) {
+        left = Math.max(margin, windowWidth - popupWidth - margin);
+    }
+    
+    // Ensure popup doesn't go off-screen
+    left = Math.max(margin, Math.min(left, windowWidth - popupWidth - margin));
+    top = Math.max(margin, Math.min(top, windowHeight - popupHeight - margin));
+    
+    linkSuggestionDiv.style.left = left + 'px';
+    linkSuggestionDiv.style.top = top + 'px';
     linkSuggestionDiv.style.display = 'block';
+    linkSuggestionDiv.setAttribute('data-positioning', positioning);
+    
+    // Add subtle animation
+    linkSuggestionDiv.style.opacity = '0';
+    linkSuggestionDiv.style.transform = positioning === 'above' ? 'translateY(10px) scale(0.95)' : 'translateY(-10px) scale(0.95)';
+    
+    requestAnimationFrame(() => {
+        linkSuggestionDiv.style.transition = 'opacity 0.25s ease, transform 0.25s ease';
+        linkSuggestionDiv.style.opacity = '1';
+        linkSuggestionDiv.style.transform = 'translateY(0) scale(1)';
+    });
     
     updateSuggestionSelection();
 }
 
 function updateSuggestionSelection() {
-    linkSuggestionDiv.innerHTML = currentSuggestions.map((note, index) => {
+    const headerHtml = `
+        <div class="note-link-header">
+            <div class="link-header-icon">🔗</div>
+            <div class="link-header-text">
+                <span class="link-header-title">Link to Note</span>
+                <span class="link-header-count">${currentSuggestions.length} option${currentSuggestions.length !== 1 ? 's' : ''}</span>
+            </div>
+        </div>
+    `;
+    
+    const suggestionsHtml = currentSuggestions.map((note, index) => {
         const category = categories.find(cat => cat.name === note.category) || { color: '#4a9eff' };
-        return `<div class="link-suggestion-item ${index === selectedSuggestionIndex ? 'selected' : ''}" onclick="event.stopPropagation(); insertNoteLink('${note.title.replace(/'/g, "\\'")}')"; return false;">
-            <div class="suggestion-title">${note.title}</div>
-            <div class="suggestion-meta" style="color: ${category.color}">${note.category}</div>
+        const isSelected = index === selectedSuggestionIndex;
+        const preview = note.content ? note.content.replace(/<[^>]*>/g, '').substring(0, 80) + '...' : 'No content';
+        const updatedDate = new Date(note.updatedAt).toLocaleDateString();
+        
+        return `<div class="note-link-option ${isSelected ? 'selected' : ''}" 
+                     data-note-title="${note.title}"
+                     onmouseenter="selectSuggestionByIndex(${index})"
+                     data-index="${index}">
+            <div class="option-main">
+                <div class="option-title">${highlightSearchMatch(note.title, getCurrentSearchTerm())}</div>
+                <div class="option-preview">${preview}</div>
+            </div>
+            <div class="option-meta">
+                <div class="option-category" style="background-color: ${category.color}20; color: ${category.color}; border-color: ${category.color}40">
+                    ${note.category}
+                </div>
+                <div class="option-date">${updatedDate}</div>
+            </div>
         </div>`;
     }).join('');
+    
+    const footerHtml = `
+        <div class="note-link-footer">
+            <span class="link-hint">↑↓ Navigate • Enter/Tab Select • Esc Cancel</span>
+        </div>
+    `;
+    
+    linkSuggestionDiv.innerHTML = headerHtml + suggestionsHtml + footerHtml;
+    
+    // Use mousedown instead of click to prevent editor focus issues
+    linkSuggestionDiv.onmousedown = (e) => {
+        const option = e.target.closest('.note-link-option');
+        if (option) {
+            e.preventDefault();
+            e.stopPropagation();
+            const noteTitle = option.getAttribute('data-note-title');
+            insertNoteLink(noteTitle);
+        }
+    };
+}
+
+function selectSuggestionByIndex(index) {
+    selectedSuggestionIndex = index;
+    updateSuggestionHighlight();
+    
+    // Add subtle hover sound effect (visual feedback)
+    const selectedItem = linkSuggestionDiv.querySelector('.note-link-option.selected');
+    if (selectedItem) {
+        selectedItem.style.transform = 'translateX(6px) scale(1.01)';
+        setTimeout(() => {
+            if (selectedItem.classList.contains('selected')) {
+                selectedItem.style.transform = 'translateX(4px)';
+            }
+        }, 100);
+    }
+}
+
+function updateSuggestionHighlight() {
+    const items = linkSuggestionDiv.querySelectorAll('.note-link-option');
+    items.forEach((item, index) => {
+        item.classList.toggle('selected', index === selectedSuggestionIndex);
+    });
+    
+    // Scroll selected item into view
+    const selectedItem = items[selectedSuggestionIndex];
+    if (selectedItem) {
+        selectedItem.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+    }
+}
+
+function getCurrentSearchTerm() {
+    if (!currentRange) return '';
+    const textContent = currentRange.startContainer.textContent || '';
+    const cursorPos = currentRange.startOffset;
+    const beforeCursor = textContent.substring(0, cursorPos);
+    const linkMatch = beforeCursor.match(/@([\w\s-]*)$/);
+    return linkMatch ? linkMatch[1] : '';
+}
+
+function highlightSearchMatch(text, searchTerm) {
+    if (!searchTerm || searchTerm.length === 0) return text;
+    const escapedTerm = searchTerm.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const regex = new RegExp(`(${escapedTerm})`, 'gi');
+    return text.replace(regex, '<span class="search-match-highlight">$1</span>');
 }
 
 function hideLinkSuggestions() {
     if (linkSuggestionDiv) {
-        linkSuggestionDiv.style.display = 'none';
+        linkSuggestionDiv.style.transition = 'opacity 0.2s ease, transform 0.2s ease';
+        linkSuggestionDiv.style.opacity = '0';
+        linkSuggestionDiv.style.transform = 'translateY(-8px) scale(0.95)';
+        
+        setTimeout(() => {
+            if (linkSuggestionDiv) {
+                linkSuggestionDiv.style.display = 'none';
+            }
+        }, 200);
     }
     selectedSuggestionIndex = -1;
     currentSuggestions = [];
+    currentRange = null;
 }
 
 function insertNoteLink(noteTitle) {
@@ -4918,6 +5148,38 @@ function insertNoteLink(noteTitle) {
             range.setEnd(textNode, newPos);
             selection.removeAllRanges();
             selection.addRange(range);
+            
+            // Show brief confirmation
+            const tempMsg = document.createElement('div');
+            tempMsg.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                background: var(--success-color);
+                color: white;
+                padding: 0.5rem 0.75rem;
+                border-radius: 6px;
+                font-size: 0.85rem;
+                font-weight: 500;
+                z-index: 10001;
+                box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+                opacity: 0;
+                transform: translateY(-10px);
+                transition: all 0.3s ease;
+            `;
+            tempMsg.textContent = `🔗 Linked to: ${noteTitle}`;
+            document.body.appendChild(tempMsg);
+            
+            requestAnimationFrame(() => {
+                tempMsg.style.opacity = '1';
+                tempMsg.style.transform = 'translateY(0)';
+            });
+            
+            setTimeout(() => {
+                tempMsg.style.opacity = '0';
+                tempMsg.style.transform = 'translateY(-10px)';
+                setTimeout(() => tempMsg.remove(), 300);
+            }, 1500);
         }
     }
     
@@ -4925,16 +5187,19 @@ function insertNoteLink(noteTitle) {
     editor.focus();
 }
 
+// Function to view linked note with enhanced feedback
+function viewLinkedNote(noteId) {
+    const note = notes.find(n => n.id === noteId);
+    if (note) {
+        viewNote(noteId);
+    } else {
+        showAlert('❌ Note Not Found', 'The linked note could not be found. It may have been deleted or renamed.');
+    }
+}
+
 // Setup click handlers for note links
 function setupNoteLinkClicks() {
-    document.addEventListener('click', function(event) {
-        if (event.target.classList.contains('note-link') && event.target.getAttribute('data-note-id')) {
-            event.preventDefault();
-            event.stopPropagation();
-            const noteId = event.target.getAttribute('data-note-id');
-            viewNote(noteId);
-        }
-    });
+    // Links now use onclick attribute, no additional setup needed
 }
 
 // Category context menu functions
