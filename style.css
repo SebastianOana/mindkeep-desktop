@@ -2613,8 +2613,10 @@ a.note-link.active-link:hover {
   word-break: break-word;
   display: -webkit-box;
   -webkit-line-clamp: 2;
+  line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
+  max-height: 2.24em; /* fallback: 1.4 line-height * 2 lines * 0.8rem */
 }
 
 .note-link-option.selected .option-preview {
